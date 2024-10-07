@@ -11,3 +11,16 @@ services:
       watch:
         - action: rebuild
           path: .
+    networks:
+      - node-network
+
+  mongodb:
+    image: mongo:6-jammy
+    ports:
+      - "27017:27017"
+    networks:
+      - node-network
+
+networks:
+  node-network:
+    driver: bridge

@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT;
 if (!port) throw new Error("PORT must be provided");
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/", async (req: Request, res: Response) => {
   res.send("Supply-Manager-Backend");
 });
 

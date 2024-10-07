@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --require ts-node/register src/**/*.test.js",
     "start": "ts-node src/index.ts",
     "build": "tsc",
     "serve": "node dist/index.js"
@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "mongodb": "^6.9.0"
   }
 }

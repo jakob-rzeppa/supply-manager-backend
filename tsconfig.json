@@ -8,6 +8,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/test/database/MongoDB.test.js",
+    "src/index.js"
+  ],
   "exclude": ["node_modules"]
 }
