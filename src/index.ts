@@ -9,7 +9,7 @@ const port = process.env.PORT;
 if (!port) throw new Error("PORT must be provided");
 
 app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, TypeScript Express!");
+  res.send("Supply-Manager-Backend");
 });
 
 app.listen(port, () => {
