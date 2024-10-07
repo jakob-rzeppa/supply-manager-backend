@@ -1,14 +1,12 @@
 import express, { Request, Response } from "express";
-import dotenv from "dotenv";
-
-dotenv.config();
+import "jsr:@std/dotenv/load";
 
 const app = express();
 
-const port = process.env.PORT;
+const port = Deno.env.get("PORT");
 if (!port) throw new Error("PORT must be provided");
 
-app.get("/", async (req: Request, res: Response) => {
+app.get("/", (_req: Request, res: Response) => {
   res.send("Supply-Manager-Backend");
 });
 

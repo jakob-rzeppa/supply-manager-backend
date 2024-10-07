@@ -1,13 +1,14 @@
-FROM node:20
+FROM denoland/deno:2.0.0-rc.10
+
+# The port that your application listens to.
+EXPOSE 3060
 
 WORKDIR /app
 
-COPY package*.json /app
+# Prefer not to run as root.
+USER deno
 
-RUN npm install
+# These steps will be re-run upon each file change in your working directory:
+COPY . .
 
-COPY . /app
-
-EXPOSE 3060
-
-CMD ["npm", "run", "start"]
+CMD ["run", "--allow-net", "src/index.ts"]

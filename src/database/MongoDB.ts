@@ -1,9 +1,7 @@
-import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
+import "jsr:@std/dotenv/load";
 
-dotenv.config();
-
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = Deno.env.get("MONGO_URI");
 
 let client: MongoClient | undefined = undefined;
 
