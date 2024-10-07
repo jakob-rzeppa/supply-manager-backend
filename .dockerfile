@@ -10,5 +10,6 @@ USER deno
 
 # These steps will be re-run upon each file change in your working directory:
 COPY . .
+RUN deno cache src/**/*.ts
 
-CMD ["run", "--allow-net", "src/index.ts"]
+CMD ["run", "-A", "src/index.ts"]
