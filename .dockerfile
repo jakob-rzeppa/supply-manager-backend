@@ -12,4 +12,4 @@ USER deno
 COPY . .
 RUN deno cache src/**/*.ts
 
-CMD ["run", "-A", "src/index.ts"]
+CMD ["task", "dev"]
