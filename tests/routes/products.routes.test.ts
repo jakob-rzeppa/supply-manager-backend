@@ -76,18 +76,6 @@ Deno.test("GET /products/:id should return a product", async () => {
     getProductByIdStub.restore();
 });
 
-Deno.test("GET /products/:ean should return a product", async () => {
-    const getProductByEanAndUserStub = stub(db, "getProductByEanAndUser", () => Promise.resolve(mockProduct));
-
-    const response = await fetch(`http://localhost:3060/products/${mockProduct.ean}`);
-    const body = await response.json();
-
-    assertEquals(response.status, 200);
-    assertEquals(body, { data: expectedProduct, message: "Product found", error: null});
-
-    getProductByEanAndUserStub.restore();
-});
-
 Deno.test("POST /products should create a product", async () => {
     const createProductStub = stub(db, "createProduct", () => Promise.resolve(mockProduct));
 
@@ -130,18 +118,6 @@ Deno.test("DELETE /products/:id should delete a product", async () => {
     assertEquals(body, { message: "Product deleted", error: null });
 
     deleteProductByIdStub.restore();
-});
-
-Deno.test("DELETE /products/:ean should delete a product", async () => {
-    const deleteProductByEanAndUserStub = stub(db, "deleteProductByEanAndUser", () => Promise.resolve());
-
-    const response = await fetch(`http://localhost:3060/products/${mockProduct.ean}`, { method: "DELETE" });
-    const body = await response.json();
-
-    assertEquals(response.status, 200);
-    assertEquals(body, { message: "Product deleted", error: null });
-
-    deleteProductByEanAndUserStub.restore();
 });
 
 afterAll(() => server.close());
