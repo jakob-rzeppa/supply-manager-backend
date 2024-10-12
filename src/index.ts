@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import "jsr:@std/dotenv/load";
 
-import productsRoutes from "./routes/productsRoutes.ts";
+import productsRoutes from "./routes/products.routes.ts";
 
 const app = express();
 

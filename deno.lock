@@ -9,6 +9,7 @@
     "jsr:@std/internal@^1.0.4": "1.0.4",
     "jsr:@std/path@^1.0.6": "1.0.6",
     "jsr:@std/testing@^1.0.3": "1.0.3",
+    "npm:@types/jsonwebtoken@^9.0.7": "9.0.7",
     "npm:@types/node@*": "22.5.4",
     "npm:express@^4.21.0": "4.21.0",
     "npm:jsonwebtoken@^9.0.2": "9.0.2",
@@ -57,6 +58,12 @@
       "integrity": "sha512-tVkljjeEaAhCqTzajSdgbQ6gE6f3oneVwa3iXR6csiEwXXOFsiC6Uh9iAjAhXPtqa/XMDHWjjeNH/77m/Yq2dw==",
       "dependencies": [
         "sparse-bitfield"
+      ]
+    },
+    "@types/jsonwebtoken@9.0.7": {
+      "integrity": "sha512-ugo316mmTYBl2g81zDFnZ7cfxlut3o+/EQdaP7J8QN2kY6lJ22hmQYCK5EHcJHbrW+dkCGSCPgbG8JtYj6qSrg==",
+      "dependencies": [
+        "@types/node"
       ]
     },
     "@types/node@22.5.4": {
@@ -819,6 +826,7 @@
     "dependencies": [
       "jsr:@std/assert@1",
       "jsr:@std/testing@^1.0.3",
+      "npm:@types/jsonwebtoken@^9.0.7",
       "npm:express@^4.21.0",
       "npm:jsonwebtoken@^9.0.2",
       "npm:mongoose@^8.7.1"
