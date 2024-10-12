@@ -4,7 +4,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: .dockerfile
+      dockerfile: Dockerfile
     ports:
       - 3060:3060
     develop:

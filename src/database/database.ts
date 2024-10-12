@@ -4,17 +4,18 @@ import {
   UserUpdateObject,
   ProductUpdateObject,
 } from "./database.types.ts";
-import MongoDatabase from "./mongoDatabase.ts";
 
 export default abstract class Database {
   private static instance: Database | undefined = undefined;
 
-  public static getInstance(db: "mongoDB" = "mongoDB") {
+  public static async getInstance(db: "mongoDB" = "mongoDB") {
     if (!this.instance) {
       switch (db) {
-        case "mongoDB":
+        case "mongoDB": {
+          const { default: MongoDatabase } = await import("./mongoDatabase.ts");
           this.instance = new MongoDatabase();
           break;
+        }
         default:
           throw new Error("Database not supported");
       }
@@ -22,6 +23,8 @@ export default abstract class Database {
 
     return this.instance;
   }
+
+  public abstract connect(test_db: boolean): void;
 
   // ---- user ----
   public abstract getUserById(id: string): Promise<User>;

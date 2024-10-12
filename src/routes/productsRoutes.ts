@@ -1,7 +1,15 @@
 import { Router, Request, Response } from "express";
+import Database from "../database/database.ts";
 
-const productsRoutes = new Router();
+const getProductsRoutes = async (db: Database) => {
+  const productsRoutes = new Router();
 
-productsRoutes.get("/", async (_req: Request, res: Response) => {});
+  productsRoutes.get("/", async (_req: Request, res: Response) => {
+    const products = await db.getProductById("ffffffffffffffffffffffff");
+    res.send(products);
+  });
 
-export default productsRoutes;
+  return productsRoutes;
+};
+
+export default getProductsRoutes;

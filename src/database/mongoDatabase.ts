@@ -9,25 +9,26 @@ import type {
 } from "./database.types.ts";
 import mongoose from "mongoose";
 import NotFoundException from "../errors/notFoundException.ts";
-import { ProductModel, UserModel } from "./database.schemas.ts";
+import { ProductModel, UserModel } from "./database.models.ts";
 
 export default class MongoDatabase extends Database {
-  public constructor() {
-    super();
-    this.connectToMongo();
-  }
+  public async connect(test_db: boolean): Promise<void> {
+    if (mongoose.connection.readyState !== mongoose.STATES.disconnected) {
+      console.log("Mongoose status: ", mongoose.connection.readyState);
+      return;
+    }
 
-  private connectToMongo() {
-    const mongoURI = Deno.env.get("MONGO_URI");
+    const mongoURI = test_db
+      ? Deno.env.get("MONGO_TEST_URI")
+      : Deno.env.get("MONGO_URI");
     if (!mongoURI) throw new Error("MONGO_URI must be provided");
 
-    mongoose.connect(mongoURI);
+    await mongoose.connect(mongoURI);
+
+    console.log("Connected to MongoDB");
 
     mongoose.connection.on("error", (err) => {
       console.error(err);
-    });
-    mongoose.connection.once("open", () => {
-      console.log("Connected to MongoDB");
     });
   }
 
