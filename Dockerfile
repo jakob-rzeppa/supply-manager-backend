@@ -11,6 +11,4 @@ EXPOSE 3060
 # These steps will be re-run upon each file change in your working directory:
 COPY . .
 
-RUN deno cache src/**/*.ts
-
 CMD ["run", "--watch", "-A", "src/index.ts"]

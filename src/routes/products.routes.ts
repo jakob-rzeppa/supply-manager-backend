@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import Database from "../database/database.ts";
 
-const getProductsRoutes = async (db: Database) => {
+const getProductsRoutes = (db: Database) => {
   const productsRoutes = new Router();
 
   productsRoutes.get("/", async (_req: Request, res: Response) => {

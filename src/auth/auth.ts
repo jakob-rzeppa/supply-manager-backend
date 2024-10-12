@@ -1,4 +1,4 @@
-import "jsr:@std/dotenv/load";
+/*import "jsr:@std/dotenv/load";
 import jwt from "npm:jsonwebtoken";
 import { VerifyErrors } from "npm:@types/jsonwebtoken";
 import { Router, Request, Response, Next } from "express";
@@ -42,3 +42,4 @@ function getAuthRoutes(db: Database): Router {
     return authRoutes;
   });
 }
+*/

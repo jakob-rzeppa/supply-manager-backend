@@ -1,7 +1,7 @@
 import type mongoose from "mongoose";
 
 export interface Item {
-  _id?: mongoose.Schema.Types.ObjectId;
+  _id?: mongoose.Types.ObjectId;
 
   expiration_date: Date;
 }
@@ -11,10 +11,10 @@ export interface ItemUpdateObject {
 }
 
 export interface Product {
-  _id?: mongoose.Schema.Types.ObjectId;
+  _id?: mongoose.Types.ObjectId;
 
   ean: string;
-  user_id: mongoose.Schema.Types.ObjectId;
+  user_id: mongoose.Types.ObjectId;
 
   name: string;
   description: string;
@@ -24,13 +24,14 @@ export interface Product {
 
 export interface ProductUpdateObject {
   ean?: string;
+  user_id: mongoose.Types.ObjectId;
 
   name?: string;
   description?: string;
 }
 
 export interface User {
-  _id?: mongoose.Schema.Types.ObjectId;
+  _id?: mongoose.Types.ObjectId;
 
   email: string;
   password: string;

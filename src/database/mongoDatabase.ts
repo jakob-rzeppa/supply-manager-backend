@@ -26,10 +26,6 @@ export default class MongoDatabase extends Database {
     await mongoose.connect(mongoURI);
 
     console.log("Connected to MongoDB");
-
-    mongoose.connection.on("error", (err) => {
-      console.error(err);
-    });
   }
 
   // ---- user ----

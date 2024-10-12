@@ -7,12 +7,12 @@ const itemSchema = new mongoose.Schema<Item>({
 
 const productSchema = new mongoose.Schema<Product>({
   ean: { type: String, required: false },
-  user_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  user_id: mongoose.Schema.Types.ObjectId,
 
   name: { type: String, required: true },
   description: { type: String, required: false },
 
-  items: { type: [itemSchema], required: true, default: [] },
+  items: [itemSchema]
 });
 
 export const ProductModel = mongoose.model<Product>("Product", productSchema);
