@@ -3,7 +3,7 @@ import {
   User,
   UserUpdateObject,
   ProductUpdateObject,
-} from "./database.types.ts";
+} from "./database.types";
 
 export default abstract class Database {
   private static instance: Database | undefined = undefined;
@@ -12,7 +12,7 @@ export default abstract class Database {
     if (!this.instance) {
       switch (db) {
         case "mongoDB": {
-          const { default: MongoDatabase } = await import("./mongoDatabase.ts");
+          const { default: MongoDatabase } = await import("./mongoDatabase");
           this.instance = new MongoDatabase();
           break;
         }

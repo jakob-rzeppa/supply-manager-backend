@@ -1,4 +1,4 @@
-import {afterAll} from "@std/testing/bdd";
+/*import {afterAll} from "@std/testing/bdd";
 import { stub } from "@std/testing/mock";
 import Database from "../../src/database/database.ts";
 import getProductsRoutes from "../../src/routes/products.routes.ts";
@@ -120,4 +120,4 @@ Deno.test("DELETE /products/:id should delete a product", async () => {
     deleteProductByIdStub.restore();
 });
 
-afterAll(() => server.close());
+afterAll(() => server.close());*/

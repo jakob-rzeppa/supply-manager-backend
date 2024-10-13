@@ -7,8 +7,13 @@ services:
       - 3060:3060
     develop:
       watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+          ignore:
+            - node_modules/
         - action: rebuild
-          path: .
+          path: package.json
     networks:
       - node-network
 

@@ -1,20 +1,20 @@
 import express, { Request, Response } from "express";
-import "jsr:@std/dotenv/load";
+import dotenv from "dotenv";
+dotenv.config();
 
-import productsRoutes from "./routes/products.routes.ts";
+import getProductsRoutes from "./routes/products.routes";
+import Database from "./database/database";
 
 const app = express();
 
-const port = Deno.env.get("PORT");
+const port = process.env.PORT;
 if (!port) throw new Error("PORT must be provided");
 
 app.get("/", (_req: Request, res: Response) => {
-  res.send("Supply-Manager-Backend");
+  res.send("Supply-Manager-Backend!");
 });
 
 app.use(express.json());
-
-app.use("/products", productsRoutes);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

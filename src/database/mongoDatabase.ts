@@ -1,15 +1,15 @@
 import "jsr:@std/dotenv/load";
 
-import Database from "./database.ts";
+import Database from "./database";
 import type {
   Product,
   ProductUpdateObject,
   User,
   UserUpdateObject,
-} from "./database.types.ts";
+} from "./database.types";
 import mongoose from "mongoose";
-import NotFoundException from "../errors/notFoundException.ts";
-import { ProductModel, UserModel } from "./database.models.ts";
+import NotFoundException from "../errors/notFoundException";
+import { ProductModel, UserModel } from "./database.models";
 
 export default class MongoDatabase extends Database {
   public async connect(test_db: boolean): Promise<void> {
@@ -19,8 +19,8 @@ export default class MongoDatabase extends Database {
     }
 
     const mongoURI = test_db
-      ? Deno.env.get("MONGO_TEST_URI")
-      : Deno.env.get("MONGO_URI");
+      ? process.env.MONGO_TEST_URI
+      : process.env.MONGO_URI;
     if (!mongoURI) throw new Error("MONGO_URI must be provided");
 
     await mongoose.connect(mongoURI);
@@ -97,12 +97,12 @@ export default class MongoDatabase extends Database {
     const product = await ProductModel.findById(id);
     if (!product) throw new NotFoundException("Product not found");
 
-    Object.keys(updateProductObject).forEach((key) => {
-      const typedKey = key as keyof ProductUpdateObject;
-      if (updateProductObject[typedKey] !== undefined) {
-        product[typedKey] = updateProductObject[typedKey];
-      }
-    });
+    if (updateProductObject.ean !== undefined)
+      product.ean = updateProductObject.ean;
+    if (updateProductObject.name !== undefined)
+      product.name = updateProductObject.name;
+    if (updateProductObject.description !== undefined)
+      product.description = updateProductObject.description;
 
     return await product.save();
   }
