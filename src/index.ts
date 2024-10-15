@@ -1,21 +1,33 @@
 import express, { Request, Response } from "express";
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 
 import getProductsRoutes from "./routes/products.routes";
 import Database from "./database/database";
 
-const app = express();
+async function createApp(db: Database) {
+  const app = express();
 
-const port = process.env.PORT;
-if (!port) throw new Error("PORT must be provided");
+  await db.connect();
 
-app.get("/", (_req: Request, res: Response) => {
-  res.send("Supply-Manager-Backend!");
-});
+  const port = process.env.PORT;
+  if (!port) throw new Error("PORT must be provided");
 
-app.use(express.json());
+  app.get("/", (_req: Request, res: Response) => {
+    res.send("Supply-Manager-Backend");
+  });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+  const productsRoutes = getProductsRoutes(db);
+
+  app.use("/products", productsRoutes);
+
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+}
+
+async function main() {
+  const db = await Database.getInstance();
+  createApp(db);
+}
+
+main();

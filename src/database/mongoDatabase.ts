@@ -1,26 +1,17 @@
-import "jsr:@std/dotenv/load";
-
 import Database from "./database";
-import type {
-  Product,
-  ProductUpdateObject,
-  User,
-  UserUpdateObject,
-} from "./database.types";
+import type { Product, User } from "./database.types";
 import mongoose from "mongoose";
 import NotFoundException from "../errors/notFoundException";
 import { ProductModel, UserModel } from "./database.models";
 
 export default class MongoDatabase extends Database {
-  public async connect(test_db: boolean): Promise<void> {
+  public async connect(): Promise<void> {
     if (mongoose.connection.readyState !== mongoose.STATES.disconnected) {
       console.log("Mongoose status: ", mongoose.connection.readyState);
       return;
     }
 
-    const mongoURI = test_db
-      ? process.env.MONGO_TEST_URI
-      : process.env.MONGO_URI;
+    const mongoURI = process.env.MONGO_URI;
     if (!mongoURI) throw new Error("MONGO_URI must be provided");
 
     await mongoose.connect(mongoURI);
@@ -42,13 +33,13 @@ export default class MongoDatabase extends Database {
 
   public async updateUser(
     id: string,
-    updateUserObject: UserUpdateObject
+    updateUserObject: Partial<Omit<User, "_id">>
   ): Promise<User> {
     const user = await UserModel.findById(id);
     if (!user) throw new NotFoundException("User not found");
 
     Object.keys(updateUserObject).forEach((key) => {
-      const typedKey = key as keyof UserUpdateObject;
+      const typedKey = key as keyof typeof updateUserObject;
       if (updateUserObject[typedKey] !== undefined) {
         user[typedKey] = updateUserObject[typedKey];
       }
@@ -74,7 +65,7 @@ export default class MongoDatabase extends Database {
     if (!product) throw new NotFoundException("Product not found");
     return product;
   }
-  public async getProductByEanAndUser(
+  public async getProductByEanAndUserId(
     ean: string,
     userId: string
   ): Promise<Product> {
@@ -92,7 +83,7 @@ export default class MongoDatabase extends Database {
   //TODO: check if ean is unique for user
   public async updateProduct(
     id: string,
-    updateProductObject: ProductUpdateObject
+    updateProductObject: Partial<Omit<Product, "_id">>
   ): Promise<Product> {
     const product = await ProductModel.findById(id);
     if (!product) throw new NotFoundException("Product not found");
@@ -116,7 +107,7 @@ export default class MongoDatabase extends Database {
       throw new NotFoundException("Product not found");
     }
   }
-  public async deleteProductByEanAndUser(
+  public async deleteProductByEanAndUserId(
     ean: string,
     userId: string
   ): Promise<void> {

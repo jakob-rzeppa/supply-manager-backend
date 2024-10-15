@@ -1,3 +1,3 @@
 export default interface ItemDto {
-    expiration_date: Date;
+  expiration_date: Date;
 }

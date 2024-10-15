@@ -1,9 +1,4 @@
-import {
-  Product,
-  User,
-  UserUpdateObject,
-  ProductUpdateObject,
-} from "./database.types";
+import { Product, User } from "./database.types";
 
 export default abstract class Database {
   private static instance: Database | undefined = undefined;
@@ -24,16 +19,16 @@ export default abstract class Database {
     return this.instance;
   }
 
-  public abstract connect(test_db: boolean): void;
+  public abstract connect(): Promise<void>;
 
   // ---- user ----
   public abstract getUserById(id: string): Promise<User>;
 
-  public abstract createUser(user: User): Promise<User>;
+  public abstract createUser(user: Omit<User, "_id">): Promise<User>;
 
   public abstract updateUser(
     id: string,
-    updateUserObject: UserUpdateObject
+    updateUserObject: Partial<Omit<User, "_id">>
   ): Promise<User>;
 
   //TODO: delete all items and products related to user
@@ -42,23 +37,25 @@ export default abstract class Database {
   // ---- product ----
   public abstract getProductsByUserId(userId: string): Promise<Product[]>;
   public abstract getProductById(id: string): Promise<Product>;
-  public abstract getProductByEanAndUser(
+  public abstract getProductByEanAndUserId(
     ean: string,
     userId: string
   ): Promise<Product>;
 
   //TODO: check if ean is unique for user
-  public abstract createProduct(product: Product): Promise<Product>;
+  public abstract createProduct(
+    product: Omit<Product, "_id">
+  ): Promise<Product>;
 
   //TODO: check if ean is unique for user
   public abstract updateProduct(
     id: string,
-    updateProductObject: ProductUpdateObject
+    updateProductObject: Partial<Omit<Product, "_id">>
   ): Promise<Product>;
 
   //TODO: delete all items related to product
   public abstract deleteProductById(id: string): Promise<void>;
-  public abstract deleteProductByEanAndUser(
+  public abstract deleteProductByEanAndUserId(
     ean: string,
     userId: string
   ): Promise<void>;
