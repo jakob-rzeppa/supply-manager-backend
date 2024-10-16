@@ -1,7 +1,7 @@
 import Database from "./database";
 import type { Product, User } from "./database.types";
 import mongoose from "mongoose";
-import NotFoundException from "../errors/notFoundException";
+import NotFoundException from "../errors/db/notFoundException";
 import { ProductModel, UserModel } from "./database.models";
 
 export default class MongoDatabase extends Database {

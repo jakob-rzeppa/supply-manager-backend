@@ -1,11 +1,17 @@
-import { Router, Request, Response } from "express";
-import boom from "boom";
+import { Router, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 
 import Database from "../database/database";
 import ResponseDto from "../dtos/response.dto";
 import ProductDto from "../dtos/product.dto";
 import { Product } from "../database/database.types";
+import validateRequest from "../requestValidation/requestValidation";
+import { catchPromiseError } from "../utilityFunctions/errorHandling";
+import Joi from "joi";
+import {
+  createProductBodySchema,
+  updateProductBodySchema,
+} from "../requestValidation/productBodiesValidationSchemas";
 
 // TODO middleware to check if user is authenticated and has access to product
 // TODO validate request
@@ -13,13 +19,53 @@ import { Product } from "../database/database.types";
 const getProductsRoutes = (db: Database) => {
   const productsRoutes = Router();
 
-  productsRoutes.get("/", async (req: Request, res: Response) => {
-    const products = await db.getProductsByUserId(
-      req.headers.user_id as string
-    );
+  productsRoutes.get(
+    "/",
+    async (req: Request, res: Response, next: NextFunction) => {
+      const validationError = validateRequest(req, {
+        headers: ["user_id"],
+      });
+      if (validationError) return next(validationError);
 
-    const productDtos: ProductDto[] = products.map((product) => {
-      return {
+      const [dbError, products] = await catchPromiseError(
+        db.getProductsByUserId(req.headers.user_id as string)
+      );
+      if (dbError) return next(dbError);
+
+      const productDtos: ProductDto[] = products.map((product) => {
+        return {
+          id: product._id.toString(),
+          ean: product.ean,
+          user_id: product.user_id.toString(),
+          name: product.name,
+          description: product.description,
+          items: product.items,
+        };
+      });
+
+      const responseBody: ResponseDto<ProductDto[]> = {
+        message: "Products retrieved successfully",
+        data: productDtos,
+      };
+
+      res.status(200).json(responseBody);
+    }
+  );
+
+  productsRoutes.get(
+    "/:id",
+    async (req: Request, res: Response, next: NextFunction) => {
+      const validationError = validateRequest(req, {
+        queryParams: ["id"],
+      });
+      if (validationError) return next(validationError);
+
+      const [dbError, product] = await catchPromiseError(
+        db.getProductById(req.params.id)
+      );
+      if (dbError) return next(dbError);
+
+      const productDtos: ProductDto = {
         id: product._id.toString(),
         ean: product.ean,
         user_id: product.user_id.toString(),
@@ -27,107 +73,119 @@ const getProductsRoutes = (db: Database) => {
         description: product.description,
         items: product.items,
       };
-    });
 
-    const responseBody: ResponseDto<ProductDto[]> = {
-      message: "Products retrieved successfully",
-      data: productDtos,
-    };
+      const responseBody: ResponseDto<ProductDto> = {
+        message: "Product retrieved successfully",
+        data: productDtos,
+      };
 
-    res.status(200).json(responseBody);
-  });
+      res.status(200).json(responseBody);
+    }
+  );
 
-  productsRoutes.get("/:id", async (req: Request, res: Response) => {
-    const product = await db.getProductById(req.params.id);
+  productsRoutes.post(
+    "/",
+    async (req: Request, res: Response, next: NextFunction) => {
+      const validationError = validateRequest(req, {
+        headers: ["user_id"],
+        body: createProductBodySchema,
+      });
+      if (validationError) return next(validationError);
 
-    const productDtos: ProductDto = {
-      id: product._id.toString(),
-      ean: product.ean,
-      user_id: product.user_id.toString(),
-      name: product.name,
-      description: product.description,
-      items: product.items,
-    };
+      const productInfoToCreate = req.body as Omit<
+        ProductDto,
+        "id" | "items" | "user_id"
+      >;
+      const user_id = req.headers.user_id as string;
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Product retrieved successfully",
-      data: productDtos,
-    };
+      const productToCreate: Omit<Product, "_id"> = {
+        ...productInfoToCreate,
+        user_id: new mongoose.Types.ObjectId(user_id),
+        items: [],
+      };
 
-    res.status(200).json(responseBody);
-  });
+      const [dbError, newProduct] = await catchPromiseError(
+        db.createProduct(productToCreate)
+      );
+      if (dbError) return next(dbError);
 
-  productsRoutes.post("/", async (req: Request, res: Response) => {
-    const productInfoToCreate = req.body as Omit<
-      ProductDto,
-      "id" | "items" | "user_id"
-    >;
-    const user_id = req.headers.user_id as string;
+      const productDto: ProductDto = {
+        id: newProduct._id.toString(),
+        ean: newProduct.ean,
+        user_id: newProduct.user_id.toString(),
+        name: newProduct.name,
+        description: newProduct.description,
+        items: newProduct.items,
+      };
 
-    const productToCreate: Omit<Product, "_id"> = {
-      ...productInfoToCreate,
-      user_id: new mongoose.Types.ObjectId(user_id),
-      items: [],
-    };
+      const responseBody: ResponseDto<ProductDto> = {
+        message: "Product created succesfully",
+        data: productDto,
+      };
 
-    const newProduct = await db.createProduct(productToCreate);
+      res.status(201).json(responseBody);
+    }
+  );
 
-    const productDto: ProductDto = {
-      id: newProduct._id.toString(),
-      ean: newProduct.ean,
-      user_id: newProduct.user_id.toString(),
-      name: newProduct.name,
-      description: newProduct.description,
-      items: newProduct.items,
-    };
+  productsRoutes.put(
+    "/:id",
+    async (req: Request, res: Response, next: NextFunction) => {
+      const validationError = validateRequest(req, {
+        body: updateProductBodySchema,
+        queryParams: ["id"],
+      });
+      if (validationError) return next(validationError);
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Product created succesfully",
-      data: productDto,
-    };
+      const productInfoToUpdate = req.body as Partial<
+        Omit<ProductDto, "id" | "items" | "user_id">
+      >;
+      const id = req.params.id;
 
-    res.status(201).json(responseBody);
-  });
+      const [dbError, updatedProduct] = await catchPromiseError(
+        db.updateProduct(id, {
+          ean: productInfoToUpdate.ean,
+          name: productInfoToUpdate.name,
+          description: productInfoToUpdate.description,
+        })
+      );
+      if (dbError) return next(dbError);
 
-  productsRoutes.put("/:id", async (req: Request, res: Response) => {
-    const productInfoToUpdate = req.body as Partial<
-      Omit<ProductDto, "id" | "items" | "user_id">
-    >;
-    const id = req.params.id;
+      const productDto: ProductDto = {
+        id: updatedProduct._id.toString(),
+        ean: updatedProduct.ean,
+        user_id: updatedProduct.user_id.toString(),
+        name: updatedProduct.name,
+        description: updatedProduct.description,
+        items: updatedProduct.items,
+      };
 
-    const updatedProduct = await db.updateProduct(id, {
-      ean: productInfoToUpdate.ean,
-      name: productInfoToUpdate.name,
-      description: productInfoToUpdate.description,
-    });
+      const responseBody: ResponseDto<ProductDto> = {
+        message: "Product updated successfully",
+        data: productDto,
+      };
 
-    const productDto: ProductDto = {
-      id: updatedProduct._id.toString(),
-      ean: updatedProduct.ean,
-      user_id: updatedProduct.user_id.toString(),
-      name: updatedProduct.name,
-      description: updatedProduct.description,
-      items: updatedProduct.items,
-    };
+      res.status(200).json(responseBody);
+    }
+  );
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Product updated successfully",
-      data: productDto,
-    };
+  productsRoutes.delete(
+    "/:id",
+    async (req: Request, res: Response, next: NextFunction) => {
+      const validationError = validateRequest(req, {
+        queryParams: ["id"],
+      });
+      if (validationError) return next(validationError);
 
-    res.status(200).json(responseBody);
-  });
+      const id = req.params.id;
 
-  productsRoutes.delete("/:id", async (req: Request, res: Response) => {
-    const id = req.params.id;
+      await db.deleteProductById(id);
 
-    await db.deleteProductById(id);
-
-    const responseBody: ResponseDto<null> = {
-      message: "Product deleted successfully",
-    };
-    res.status(204).json(responseBody);
-  });
+      const responseBody: ResponseDto<null> = {
+        message: "Product deleted successfully",
+      };
+      res.status(204).json(responseBody);
+    }
+  );
 
   return productsRoutes;
 };
