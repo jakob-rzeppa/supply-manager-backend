@@ -12,6 +12,7 @@ import {
   createProductBodySchema,
   updateProductBodySchema,
 } from "../requestValidation/productBodiesValidationSchemas";
+import ValidationError from "../errors/validation/validationError";
 
 // TODO middleware to check if user is authenticated and has access to product
 // TODO validate request
@@ -55,14 +56,10 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.get(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
-      const validationError = validateRequest(req, {
-        queryParams: ["id"],
-      });
-      if (validationError) return next(validationError);
+      const id = req.params.id;
+      if (!id) return next(new ValidationError("Product id is required"));
 
-      const [dbError, product] = await catchPromiseError(
-        db.getProductById(req.params.id)
-      );
+      const [dbError, product] = await catchPromiseError(db.getProductById(id));
       if (dbError) return next(dbError);
 
       const productDtos: ProductDto = {
@@ -130,16 +127,17 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.put(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
+      const id = req.params.id;
+      if (!id) return next(new ValidationError("Product id is required"));
+
       const validationError = validateRequest(req, {
         body: updateProductBodySchema,
-        queryParams: ["id"],
       });
       if (validationError) return next(validationError);
 
       const productInfoToUpdate = req.body as Partial<
         Omit<ProductDto, "id" | "items" | "user_id">
       >;
-      const id = req.params.id;
 
       const [dbError, updatedProduct] = await catchPromiseError(
         db.updateProduct(id, {
@@ -171,19 +169,16 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.delete(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
-      const validationError = validateRequest(req, {
-        queryParams: ["id"],
-      });
-      if (validationError) return next(validationError);
-
       const id = req.params.id;
+      if (!id) return next(new ValidationError("Product id is required"));
 
-      await db.deleteProductById(id);
+      const [error] = await catchPromiseError(db.deleteProductById(id));
+      if (error) return next(error);
 
       const responseBody: ResponseDto<null> = {
         message: "Product deleted successfully",
       };
-      res.status(204).json(responseBody);
+      res.status(200).json(responseBody);
     }
   );
 

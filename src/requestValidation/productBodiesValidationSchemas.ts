@@ -7,7 +7,7 @@ export const createProductBodySchema = Joi.object({
 });
 
 export const updateProductBodySchema = Joi.object({
-  ean: Joi.string().length(13),
-  name: Joi.string(),
-  description: Joi.string(),
+  ean: Joi.string().length(13).optional(),
+  name: Joi.string().optional(),
+  description: Joi.string().allow("").optional(),
 });
