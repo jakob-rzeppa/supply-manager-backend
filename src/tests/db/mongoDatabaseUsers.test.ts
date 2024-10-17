@@ -14,8 +14,6 @@ const mockUser: User = {
   name: "test",
 };
 
-beforeAll(async () => {});
-
 describe("MongoDatabase Users", () => {
   describe("getUserById", () => {
     it("should call UserModel.findById with the correct id and return a user", async () => {
