@@ -2,7 +2,8 @@ import Database from "./database";
 import type { Product, User } from "./database.types";
 import mongoose from "mongoose";
 import NotFoundError from "../errors/db/notFoundError";
-import { ProductModel, UserModel } from "./database.models";
+import { ProductModel, UserModel } from "./mongoDatabase.models";
+import ResourceAlreadyExistsError from "../errors/db/resourceAlreadyExistsError";
 
 export default class MongoDatabase extends Database {
   public async connect(): Promise<void> {
@@ -57,6 +58,12 @@ export default class MongoDatabase extends Database {
   }
 
   // ---- product ----
+  private async checkIfEanAlreadyExistsForUser(userId: string, ean: string) {
+    const product = await ProductModel.findOne({ user_id: userId, ean });
+    if (product) return true;
+    return false;
+  }
+
   public async getProductsByUserId(userId: string): Promise<Product[]> {
     return await ProductModel.find({ user_id: userId });
   }
@@ -76,6 +83,16 @@ export default class MongoDatabase extends Database {
 
   //TODO: check if ean is unique for user
   public async createProduct(product: Product): Promise<Product> {
+    if (
+      await this.checkIfEanAlreadyExistsForUser(
+        product.user_id.toString(),
+        product.ean
+      )
+    )
+      throw new ResourceAlreadyExistsError(
+        "Product with this EAN already exists for this user"
+      );
+
     const newProduct = new ProductModel(product);
     return await newProduct.save();
   }
@@ -88,8 +105,20 @@ export default class MongoDatabase extends Database {
     const product = await ProductModel.findById(id);
     if (!product) throw new NotFoundError("Product not found");
 
-    if (updateProductObject.ean !== undefined)
+    if (updateProductObject.ean !== undefined) {
+      if (
+        await this.checkIfEanAlreadyExistsForUser(
+          updateProductObject.user_id
+            ? updateProductObject.user_id.toString()
+            : product.user_id.toString(),
+          updateProductObject.ean
+        )
+      )
+        throw new ResourceAlreadyExistsError(
+          "Product with this EAN already exists for this user"
+        );
       product.ean = updateProductObject.ean;
+    }
     if (updateProductObject.name !== undefined)
       product.name = updateProductObject.name;
     if (updateProductObject.description !== undefined)
