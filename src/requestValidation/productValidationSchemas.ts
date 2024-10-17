@@ -11,3 +11,5 @@ export const updateProductBodySchema = Joi.object({
   name: Joi.string().optional(),
   description: Joi.string().allow("").optional(),
 });
+
+export const idSchema = Joi.string().length(24).required();

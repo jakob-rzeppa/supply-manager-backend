@@ -1,7 +1,7 @@
 import Database from "./database";
 import type { Product, User } from "./database.types";
 import mongoose from "mongoose";
-import NotFoundException from "../errors/db/notFoundException";
+import NotFoundError from "../errors/db/notFoundError";
 import { ProductModel, UserModel } from "./database.models";
 
 export default class MongoDatabase extends Database {
@@ -22,7 +22,7 @@ export default class MongoDatabase extends Database {
   // ---- user ----
   public async getUserById(id: string): Promise<User> {
     const user = await UserModel.findById(id);
-    if (!user) throw new NotFoundException("User not found");
+    if (!user) throw new NotFoundError("User not found");
     return user;
   }
 
@@ -36,7 +36,7 @@ export default class MongoDatabase extends Database {
     updateUserObject: Partial<Omit<User, "_id">>
   ): Promise<User> {
     const user = await UserModel.findById(id);
-    if (!user) throw new NotFoundException("User not found");
+    if (!user) throw new NotFoundError("User not found");
 
     Object.keys(updateUserObject).forEach((key) => {
       const typedKey = key as keyof typeof updateUserObject;
@@ -52,7 +52,7 @@ export default class MongoDatabase extends Database {
   public async deleteUser(id: string): Promise<void> {
     const deleteResponse = await UserModel.deleteOne({ _id: id });
     if (deleteResponse.deletedCount === 0) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundError("User not found");
     }
   }
 
@@ -62,7 +62,7 @@ export default class MongoDatabase extends Database {
   }
   public async getProductById(id: string): Promise<Product> {
     const product = await ProductModel.findById(id);
-    if (!product) throw new NotFoundException("Product not found");
+    if (!product) throw new NotFoundError("Product not found");
     return product;
   }
   public async getProductByEanAndUserId(
@@ -70,7 +70,7 @@ export default class MongoDatabase extends Database {
     userId: string
   ): Promise<Product> {
     const product = await ProductModel.findOne({ ean, user_id: userId });
-    if (!product) throw new NotFoundException("Product not found");
+    if (!product) throw new NotFoundError("Product not found");
     return product;
   }
 
@@ -86,7 +86,7 @@ export default class MongoDatabase extends Database {
     updateProductObject: Partial<Omit<Product, "_id">>
   ): Promise<Product> {
     const product = await ProductModel.findById(id);
-    if (!product) throw new NotFoundException("Product not found");
+    if (!product) throw new NotFoundError("Product not found");
 
     if (updateProductObject.ean !== undefined)
       product.ean = updateProductObject.ean;
@@ -104,7 +104,7 @@ export default class MongoDatabase extends Database {
       _id: id,
     });
     if (deleteResponse.deletedCount === 0) {
-      throw new NotFoundException("Product not found");
+      throw new NotFoundError("Product not found");
     }
   }
   public async deleteProductByEanAndUserId(
@@ -116,7 +116,7 @@ export default class MongoDatabase extends Database {
       user_id: userId,
     });
     if (deleteResponse.deletedCount === 0) {
-      throw new NotFoundException("Product not found");
+      throw new NotFoundError("Product not found");
     }
   }
 }

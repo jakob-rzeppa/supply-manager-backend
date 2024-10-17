@@ -7,15 +7,13 @@ import ProductDto from "../dtos/product.dto";
 import { Product } from "../database/database.types";
 import validateRequest from "../requestValidation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
-import Joi from "joi";
 import {
   createProductBodySchema,
+  idSchema,
   updateProductBodySchema,
-} from "../requestValidation/productBodiesValidationSchemas";
-import ValidationError from "../errors/validation/validationError";
+} from "../requestValidation/productValidationSchemas";
 
 // TODO middleware to check if user is authenticated and has access to product
-// TODO validate request
 // TODO logging
 const getProductsRoutes = (db: Database) => {
   const productsRoutes = Router();
@@ -24,7 +22,7 @@ const getProductsRoutes = (db: Database) => {
     "/",
     async (req: Request, res: Response, next: NextFunction) => {
       const validationError = validateRequest(req, {
-        headers: ["user_id"],
+        headers: new Map([["user_id", idSchema]]),
       });
       if (validationError) return next(validationError);
 
@@ -56,8 +54,12 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.get(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
+      const validationError = validateRequest(req, {
+        params: new Map([["id", idSchema]]),
+      });
+      if (validationError) return next(validationError);
+
       const id = req.params.id;
-      if (!id) return next(new ValidationError("Product id is required"));
 
       const [dbError, product] = await catchPromiseError(db.getProductById(id));
       if (dbError) return next(dbError);
@@ -84,7 +86,7 @@ const getProductsRoutes = (db: Database) => {
     "/",
     async (req: Request, res: Response, next: NextFunction) => {
       const validationError = validateRequest(req, {
-        headers: ["user_id"],
+        headers: new Map([["user_id", idSchema]]),
         body: createProductBodySchema,
       });
       if (validationError) return next(validationError);
@@ -127,14 +129,13 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.put(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
-      const id = req.params.id;
-      if (!id) return next(new ValidationError("Product id is required"));
-
       const validationError = validateRequest(req, {
+        params: new Map([["id", idSchema]]),
         body: updateProductBodySchema,
       });
       if (validationError) return next(validationError);
 
+      const id = req.params.id;
       const productInfoToUpdate = req.body as Partial<
         Omit<ProductDto, "id" | "items" | "user_id">
       >;
@@ -169,8 +170,11 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.delete(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
+      const validationError = validateRequest(req, {
+        params: new Map([["id", idSchema]]),
+      });
+
       const id = req.params.id;
-      if (!id) return next(new ValidationError("Product id is required"));
 
       const [error] = await catchPromiseError(db.deleteProductById(id));
       if (error) return next(error);
