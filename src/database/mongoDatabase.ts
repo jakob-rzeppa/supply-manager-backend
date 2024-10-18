@@ -58,7 +58,7 @@ export default class MongoDatabase extends Database {
   }
 
   // ---- product ----
-  private async checkIfEanAlreadyExistsForUser(userId: string, ean: string) {
+  public async checkIfEanAlreadyExistsForUser(userId: string, ean: string) {
     const product = await ProductModel.findOne({ user_id: userId, ean });
     if (product) return true;
     return false;

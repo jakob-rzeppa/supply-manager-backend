@@ -17,30 +17,37 @@ const mockUser: User = {
 describe("MongoDatabase Users", () => {
   describe("getUserById", () => {
     it("should call UserModel.findById with the correct id and return a user", async () => {
-      UserModel.findById = jest.fn().mockReturnValue(mockUser);
+      const mock = jest
+        .spyOn(UserModel, "findById")
+        .mockResolvedValueOnce(mockUser);
       const user = await mongoDatabase.getUserById(mockId);
 
       expect(user).toEqual(mockUser);
-      expect(UserModel.findById).toHaveBeenCalledWith(mockId);
+      expect(mock).toHaveBeenCalledWith(mockId);
     });
 
     it("should throw a NotFoundError if UserModel.findById returns null", async () => {
-      UserModel.findById = jest.fn().mockReturnValue(null);
+      const mock = jest
+        .spyOn(UserModel, "findById")
+        .mockResolvedValueOnce(null);
 
       await expect(mongoDatabase.getUserById(mockId)).rejects.toThrow(
         "User not found"
       );
+      expect(mock).toHaveBeenCalledWith(mockId);
     });
   });
 
   describe("createUser", () => {
     it("should create a new user and return it", async () => {
-      UserModel.prototype.save = jest.fn().mockReturnValue(mockUser);
+      const mock = jest
+        .spyOn(UserModel.prototype, "save")
+        .mockResolvedValueOnce(mockUser);
 
       const user = await mongoDatabase.createUser(mockUser);
 
       expect(user).toEqual(mockUser);
-      expect(UserModel.prototype.save).toHaveBeenCalled();
+      expect(mock).toHaveBeenCalled();
     });
   });
 
@@ -49,8 +56,12 @@ describe("MongoDatabase Users", () => {
       const mockUpdatedUser = { ...mockUser, email: "newEmail" };
       let user = new UserModel(mockUser);
 
-      UserModel.findById = jest.fn().mockReturnValue(user);
-      UserModel.prototype.save = jest.fn().mockReturnValue(mockUpdatedUser);
+      const findByIdMock = jest
+        .spyOn(UserModel, "findById")
+        .mockResolvedValueOnce(user);
+      const saveMock = jest
+        .spyOn(UserModel.prototype, "save")
+        .mockResolvedValueOnce(mockUpdatedUser);
 
       const updateUserObject = { email: "newEmail" };
       const updatedUser = await mongoDatabase.updateUser(
@@ -59,35 +70,43 @@ describe("MongoDatabase Users", () => {
       );
 
       expect(updatedUser).toEqual(mockUpdatedUser);
-      expect(UserModel.findById).toHaveBeenCalledWith(mockId);
+      expect(findByIdMock).toHaveBeenCalledWith(mockId);
       expect(user).toEqual(new UserModel(updatedUser));
-      expect(UserModel.prototype.save).toHaveBeenCalled();
+      expect(saveMock).toHaveBeenCalled();
     });
 
     it("should throw a NotFoundError if UserModel.findById returns null", async () => {
-      UserModel.findById = jest.fn().mockReturnValue(null);
+      const mock = jest
+        .spyOn(UserModel, "findById")
+        .mockResolvedValueOnce(null);
 
       await expect(mongoDatabase.updateUser(mockId, {})).rejects.toThrow(
         "User not found"
       );
+      expect(mock).toHaveBeenCalledWith(mockId);
     });
   });
 
   describe("deleteUser", () => {
     it("should call UserModel.deleteOne with the correct id", async () => {
-      UserModel.deleteOne = jest.fn().mockReturnValue({ deletedCount: 1 });
+      const mock = jest
+        .spyOn(UserModel, "deleteOne")
+        .mockResolvedValueOnce({ deletedCount: 1 } as any);
 
       await mongoDatabase.deleteUser(mockId);
 
-      expect(UserModel.deleteOne).toHaveBeenCalledWith({ _id: mockId });
+      expect(mock).toHaveBeenCalledWith({ _id: mockId });
     });
 
     it("should throw a NotFoundError if UserModel.deleteOne returns 0", async () => {
-      UserModel.deleteOne = jest.fn().mockReturnValue({ deletedCount: 0 });
+      const mock = jest
+        .spyOn(UserModel, "deleteOne")
+        .mockResolvedValueOnce({ deletedCount: 0 } as any);
 
       await expect(mongoDatabase.deleteUser(mockId)).rejects.toThrow(
         "User not found"
       );
+      expect(mock).toHaveBeenCalledWith({ _id: mockId });
     });
   });
 });
