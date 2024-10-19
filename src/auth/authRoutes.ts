@@ -38,7 +38,11 @@ authRoutes.post(
     // TODO Authenticate user
 
     const username: string = req.body.username;
-    const user = { name: username, id: "id" };
+    const user = {
+      name: username,
+      id: "ffffffffffffffffffffffff",
+      email: "test@test.de",
+    };
 
     const accessToken = generateAccessToken(user);
     const refreshToken = jwt.sign(user, REFRESH_TOKEN_SECRET as string);

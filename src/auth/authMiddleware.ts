@@ -21,7 +21,8 @@ export default function authMiddleware(
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string, (err, user) => {
     if (err) return next(new AuthorisationError("Invalid or expired token"));
-    res.locals.user = user;
+    user = user as { name: string; id: string; email: string };
+    res.locals.user = { name: user.name, id: user.id, email: user.email };
     return next();
   });
 }
