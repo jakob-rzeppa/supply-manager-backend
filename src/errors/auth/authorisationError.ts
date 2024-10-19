@@ -1,8 +1,8 @@
 import RuntimeError from "../runtimeError";
 
 export default class AuthorisationError extends RuntimeError {
-  constructor(message: string = "Authorisation failed") {
-    super(message, 403);
+  constructor(message: string = "Authorisation failed", status: number = 403) {
+    super(message, status);
     this.name = "AuthorisationError";
   }
 }

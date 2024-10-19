@@ -1,15 +1,11 @@
-import express, {
-  ErrorRequestHandler,
-  NextFunction,
-  Request,
-  Response,
-} from "express";
+import express, { Request, Response } from "express";
 import "dotenv/config";
-import bodyParser from "body-parser";
 
 import getProductsRoutes from "./routes/products.routes";
 import Database from "./database/database";
-import globalErrorMiddleware from "./middlewares/globalErrorMiddleware";
+import globalErrorHandlerMiddleware from "./middlewares/globalErrorHandlerMiddleware";
+import authMiddleware from "./auth/authMiddleware";
+import authRoutes from "./auth/authRoutes";
 
 async function createApp(db: Database) {
   const app = express();
@@ -19,18 +15,19 @@ async function createApp(db: Database) {
   const port = process.env.PORT;
   if (!port) throw new Error("PORT must be provided");
 
-  app.use(bodyParser.urlencoded({ extended: false }));
-  app.use(bodyParser.json());
+  app.use(express.json());
 
   app.get("/", (_req: Request, res: Response) => {
     res.send("Supply-Manager-Backend");
   });
 
+  app.use("/products", authMiddleware);
   const productsRoutes = getProductsRoutes(db);
-
   app.use("/products", productsRoutes);
 
-  app.use(globalErrorMiddleware);
+  app.use("/auth", authRoutes);
+
+  app.use(globalErrorHandlerMiddleware);
 
   app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
