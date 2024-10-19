@@ -5,29 +5,40 @@ import Database from "../database/database";
 import ResponseDto from "../dtos/response.dto";
 import ProductDto from "../dtos/product.dto";
 import { Product } from "../database/database.types";
-import validateRequest from "../requestValidation/requestValidation";
+import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import {
   createProductBodySchema,
   idSchema,
   updateProductBodySchema,
-} from "../requestValidation/productValidationSchemas";
+} from "../validation/productValidationSchemas";
+import validateLocals from "../validation/localsValidation";
+import Joi from "joi";
+import { userSchema } from "../validation/userValidationSchemas";
+import AuthorisationError from "../errors/auth/authorisationError";
+import authMiddleware from "../auth/authMiddleware";
 
-// TODO middleware to check if user is authenticated and has access to product
 // TODO logging
 const getProductsRoutes = (db: Database) => {
   const productsRoutes = Router();
 
+  productsRoutes.use(authMiddleware);
+
   productsRoutes.get(
     "/",
     async (req: Request, res: Response, next: NextFunction) => {
-      const validationError = validateRequest(req, {
-        headers: new Map([["user_id", idSchema]]),
-      });
-      if (validationError) return next(validationError);
+      {
+        const validationError = validateLocals(
+          res,
+          Joi.object({ user: userSchema })
+        );
+        if (validationError) return next(validationError);
+      }
+
+      const userId: string = res.locals.user.id;
 
       const [dbError, products] = await catchPromiseError(
-        db.getProductsByUserId(req.headers.user_id as string)
+        db.getProductsByUserId(userId as string)
       );
       if (dbError) return next(dbError);
 
@@ -54,12 +65,23 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.get(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
-      const validationError = validateRequest(req, {
-        params: new Map([["id", idSchema]]),
-      });
-      if (validationError) return next(validationError);
+      {
+        const validationError = validateRequest(req, {
+          params: new Map([["id", idSchema]]),
+        });
+        if (validationError) return next(validationError);
+      }
 
-      const id = req.params.id;
+      {
+        const validationError = validateLocals(
+          res,
+          Joi.object({ user: userSchema })
+        );
+        if (validationError) return next(validationError);
+      }
+
+      const user_id: string = res.locals.user.id;
+      const id: string = req.params.id;
 
       const [dbError, product] = await catchPromiseError(db.getProductById(id));
       if (dbError) return next(dbError);
@@ -73,6 +95,11 @@ const getProductsRoutes = (db: Database) => {
         items: product.items,
       };
 
+      if (user_id !== product.user_id.toString())
+        return next(
+          new AuthorisationError("User does not have access to this product")
+        );
+
       const responseBody: ResponseDto<ProductDto> = {
         message: "Product retrieved successfully",
         data: productDtos,
@@ -85,21 +112,28 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.post(
     "/",
     async (req: Request, res: Response, next: NextFunction) => {
-      const validationError = validateRequest(req, {
-        headers: new Map([["user_id", idSchema]]),
-        body: createProductBodySchema,
-      });
-      if (validationError) return next(validationError);
+      {
+        const validationError = validateRequest(req, {
+          body: createProductBodySchema,
+        });
+        if (validationError) return next(validationError);
+      }
 
-      const productInfoToCreate = req.body as Omit<
-        ProductDto,
-        "id" | "items" | "user_id"
-      >;
-      const user_id = req.headers.user_id as string;
+      {
+        const validationError = validateLocals(
+          res,
+          Joi.object({ user: userSchema })
+        );
+        if (validationError) return next(validationError);
+      }
+
+      const userId: string = res.locals.user.id;
+      const productInfoToCreate: Omit<ProductDto, "id" | "items" | "user_id"> =
+        req.body;
 
       const productToCreate: Omit<Product, "_id"> = {
         ...productInfoToCreate,
-        user_id: new mongoose.Types.ObjectId(user_id),
+        user_id: new mongoose.Types.ObjectId(userId),
         items: [],
       };
 
@@ -129,16 +163,27 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.put(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
-      const validationError = validateRequest(req, {
-        params: new Map([["id", idSchema]]),
-        body: updateProductBodySchema,
-      });
-      if (validationError) return next(validationError);
+      {
+        const validationError = validateRequest(req, {
+          params: new Map([["id", idSchema]]),
+          body: updateProductBodySchema,
+        });
+        if (validationError) return next(validationError);
+      }
 
-      const id = req.params.id;
-      const productInfoToUpdate = req.body as Partial<
+      {
+        const validationError = validateLocals(
+          res,
+          Joi.object({ user: userSchema })
+        );
+        if (validationError) return next(validationError);
+      }
+
+      const userId: string = res.locals.user.id;
+      const id: string = req.params.id;
+      const productInfoToUpdate: Partial<
         Omit<ProductDto, "id" | "items" | "user_id">
-      >;
+      > = req.body;
 
       const [dbError, updatedProduct] = await catchPromiseError(
         db.updateProduct(id, {
@@ -158,6 +203,11 @@ const getProductsRoutes = (db: Database) => {
         items: updatedProduct.items,
       };
 
+      if (userId !== updatedProduct.user_id.toString())
+        return next(
+          new AuthorisationError("User does not have access to this product")
+        );
+
       const responseBody: ResponseDto<ProductDto> = {
         message: "Product updated successfully",
         data: productDto,
@@ -170,11 +220,31 @@ const getProductsRoutes = (db: Database) => {
   productsRoutes.delete(
     "/:id",
     async (req: Request, res: Response, next: NextFunction) => {
-      const validationError = validateRequest(req, {
-        params: new Map([["id", idSchema]]),
-      });
+      {
+        const validationError = validateRequest(req, {
+          params: new Map([["id", idSchema]]),
+        });
+        if (validationError) return next(validationError);
+      }
 
-      const id = req.params.id;
+      {
+        const validationError = validateLocals(
+          res,
+          Joi.object({ user: userSchema })
+        );
+        if (validationError) return next(validationError);
+      }
+
+      const userId: string = res.locals.user.id;
+      const id: string = req.params.id;
+
+      const [dbError, product] = await catchPromiseError(db.getProductById(id));
+      if (dbError) return next(dbError);
+
+      if (userId !== product.user_id.toString())
+        return next(
+          new AuthorisationError("User does not have access to this product")
+        );
 
       const [error] = await catchPromiseError(db.deleteProductById(id));
       if (error) return next(error);

@@ -21,7 +21,6 @@ async function createApp(db: Database) {
     res.send("Supply-Manager-Backend");
   });
 
-  app.use("/products", authMiddleware);
   const productsRoutes = getProductsRoutes(db);
   app.use("/products", productsRoutes);
 

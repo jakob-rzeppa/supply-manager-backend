@@ -4,7 +4,7 @@ import {
   validateHeaders,
   validateBody,
   default as validateRequest,
-} from "../../requestValidation/requestValidation";
+} from "../../validation/requestValidation";
 import Joi from "joi";
 import { Request } from "express";
 import ValidationError from "../../errors/validation/validationError";

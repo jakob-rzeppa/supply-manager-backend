@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import "dotenv/config";
 import AuthenticationError from "../errors/auth/authenticationError";
 import AuthorisationError from "../errors/auth/authorisationError";
-import validateRequest from "../requestValidation/requestValidation";
+import validateRequest from "../validation/requestValidation";
 import Joi from "joi";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;

@@ -1,4 +1,4 @@
-import { Request } from "express";
+import { Request, Response } from "express";
 import ValidationError from "../errors/validation/validationError";
 import Joi from "joi";
 import { ParsedQs } from "qs";

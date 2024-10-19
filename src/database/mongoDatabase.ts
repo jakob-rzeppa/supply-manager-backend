@@ -136,6 +136,8 @@ export default class MongoDatabase extends Database {
       throw new NotFoundError("Product not found");
     }
   }
+
+  //TODO: delete all items related to product
   public async deleteProductByEanAndUserId(
     ean: string,
     userId: string
