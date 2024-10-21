@@ -3,6 +3,7 @@ import authMiddleware from "../../auth/authMiddleware";
 import AuthenticationError from "../../errors/auth/authenticationError";
 import AuthorisationError from "../../errors/auth/authorisationError";
 import jwt from "jsonwebtoken";
+import { env } from "../../config/env";
 
 describe("authMiddleware", () => {
   it("should call next with an error if no token is provided", () => {
@@ -28,10 +29,10 @@ describe("authMiddleware", () => {
   });
 
   it("should set res.locals.user with the user details if the token is valid", () => {
-    const secret = "secret";
+    env.ACCESS_TOKEN_SECRET = "secret";
     const mockUser = { name: "name", id: "id", email: "email" };
 
-    jwt.sign(mockUser, secret, (err, token) => {
+    jwt.sign(mockUser, env.ACCESS_TOKEN_SECRET, (err, token) => {
       const req = {
         headers: { authorization: `bearer ${token}` },
       } as any as Request;
@@ -43,6 +44,7 @@ describe("authMiddleware", () => {
         id: mockUser.id,
         email: mockUser.email,
       });
+      expect(next).toHaveBeenCalled();
     });
   });
 });
