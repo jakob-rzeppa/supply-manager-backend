@@ -14,7 +14,7 @@ export default function authMiddleware(
   if (token === undefined)
     return next(new AuthenticationError("No token provided"));
 
-  jwt.verify(token, env.ACCESS_TOKEN_SECRET as string, (err, user) => {
+  jwt.verify(token, env.ACCESS_TOKEN_SECRET, (err, user) => {
     if (err) return next(new AuthorisationError("Invalid or expired token"));
     user = user as { name: string; id: string; email: string };
     res.locals.user = { name: user.name, id: user.id, email: user.email };
