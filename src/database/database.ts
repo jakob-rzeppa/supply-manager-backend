@@ -2,15 +2,11 @@ import mongoose from "mongoose";
 import "dotenv/config";
 import productDatabase from "./productDatabase";
 import userDatabase from "./userDatabase";
-
-const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI) {
-  throw new Error("MONGO_URI must be defined");
-}
+import { env } from "../config/env";
 
 const database = {
   connect: () => {
-    mongoose.connect(MONGO_URI!);
+    mongoose.connect(env.MONGO_URI!);
     console.log("connected to database");
   },
   products: productDatabase,

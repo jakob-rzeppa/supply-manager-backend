@@ -5,16 +5,7 @@ import AuthenticationError from "../errors/auth/authenticationError";
 import AuthorisationError from "../errors/auth/authorisationError";
 import validateRequest from "../validation/requestValidation";
 import Joi from "joi";
-
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
-if (!ACCESS_TOKEN_SECRET) {
-  throw new Error("No ACCESS_TOKEN_SECRET provided");
-}
-
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
-if (!REFRESH_TOKEN_SECRET) {
-  throw new Error("No REFRESH_TOKEN_SECRET provided");
-}
+import { env } from "../config/env";
 
 const authRoutes = Router();
 
@@ -22,7 +13,7 @@ const authRoutes = Router();
 let refreshTokens: string[] = [];
 
 function generateAccessToken(user: { name: string; id: string }) {
-  return jwt.sign(user, ACCESS_TOKEN_SECRET!, { expiresIn: "30m" });
+  return jwt.sign(user, env.ACCESS_TOKEN_SECRET!, { expiresIn: "30m" });
 }
 
 authRoutes.post(
@@ -45,7 +36,7 @@ authRoutes.post(
     };
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = jwt.sign(user, REFRESH_TOKEN_SECRET as string);
+    const refreshToken = jwt.sign(user, env.REFRESH_TOKEN_SECRET as string);
     refreshTokens.push(refreshToken);
 
     res.status(200).json({ accessToken, refreshToken });
@@ -68,19 +59,24 @@ authRoutes.post(
     if (!refreshTokens.includes(refreshToken))
       return next(new AuthorisationError("Invalid token"));
 
-    jwt.verify(refreshToken, REFRESH_TOKEN_SECRET as string, (err, user) => {
-      if (err) return next(new AuthorisationError("Invalid or expired token"));
+    jwt.verify(
+      refreshToken,
+      env.REFRESH_TOKEN_SECRET as string,
+      (err, user) => {
+        if (err)
+          return next(new AuthorisationError("Invalid or expired token"));
 
-      if (typeof user !== "string" && user) {
-        const accessToken = generateAccessToken({
-          name: user.name,
-          id: user.id,
-        });
-        res.status(200).json({ accessToken });
-      } else {
-        return next(new AuthenticationError("Invalid token payload"));
+        if (typeof user !== "string" && user) {
+          const accessToken = generateAccessToken({
+            name: user.name,
+            id: user.id,
+          });
+          res.status(200).json({ accessToken });
+        } else {
+          return next(new AuthenticationError("Invalid token payload"));
+        }
       }
-    });
+    );
   }
 );
 
