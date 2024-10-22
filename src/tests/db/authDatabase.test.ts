@@ -1,7 +1,7 @@
-import { UserModel } from "../../database/database.models";
-import { User } from "../../database/database.types";
+import { UserModel } from "../../database/auth/authDatabase.models";
+import { User } from "../../database/auth/authDatabase.types";
 import mongoose from "mongoose";
-import userDatabase from "../../database/userDatabase";
+import authDatabase from "../../database/auth/authDatabase";
 
 const mockId = "ffffffffffffffffffffffff";
 
@@ -12,13 +12,13 @@ const mockUser: User = {
   name: "test",
 };
 
-describe("userDatabase", () => {
+describe("authDatabase", () => {
   describe("getUserById", () => {
     it("should call UserModel.findById with the correct id and return a user", async () => {
       const mock = jest
         .spyOn(UserModel, "findById")
         .mockResolvedValueOnce(mockUser);
-      const user = await userDatabase.getById(mockId);
+      const user = await authDatabase.getUserById(mockId);
 
       expect(user).toEqual(mockUser);
       expect(mock).toHaveBeenCalledWith(mockId);
@@ -29,7 +29,7 @@ describe("userDatabase", () => {
         .spyOn(UserModel, "findById")
         .mockResolvedValueOnce(null);
 
-      await expect(userDatabase.getById(mockId)).rejects.toThrow(
+      await expect(authDatabase.getUserById(mockId)).rejects.toThrow(
         "User not found"
       );
       expect(mock).toHaveBeenCalledWith(mockId);
@@ -42,7 +42,7 @@ describe("userDatabase", () => {
         .spyOn(UserModel.prototype, "save")
         .mockResolvedValueOnce(mockUser);
 
-      const user = await userDatabase.create(mockUser);
+      const user = await authDatabase.createUser(mockUser);
 
       expect(user).toEqual(mockUser);
       expect(mock).toHaveBeenCalled();
@@ -62,7 +62,10 @@ describe("userDatabase", () => {
         .mockResolvedValueOnce(mockUpdatedUser);
 
       const updateUserObject = { email: "newEmail" };
-      const updatedUser = await userDatabase.update(mockId, updateUserObject);
+      const updatedUser = await authDatabase.updateUser(
+        mockId,
+        updateUserObject
+      );
 
       expect(updatedUser).toEqual(mockUpdatedUser);
       expect(findByIdMock).toHaveBeenCalledWith(mockId);
@@ -75,7 +78,7 @@ describe("userDatabase", () => {
         .spyOn(UserModel, "findById")
         .mockResolvedValueOnce(null);
 
-      await expect(userDatabase.update(mockId, {})).rejects.toThrow(
+      await expect(authDatabase.updateUser(mockId, {})).rejects.toThrow(
         "User not found"
       );
       expect(mock).toHaveBeenCalledWith(mockId);
@@ -88,7 +91,7 @@ describe("userDatabase", () => {
         .spyOn(UserModel, "deleteOne")
         .mockResolvedValueOnce({ deletedCount: 1 } as any);
 
-      await userDatabase.delete(mockId);
+      await authDatabase.deleteUser(mockId);
 
       expect(mock).toHaveBeenCalledWith({ _id: mockId });
     });
@@ -98,7 +101,7 @@ describe("userDatabase", () => {
         .spyOn(UserModel, "deleteOne")
         .mockResolvedValueOnce({ deletedCount: 0 } as any);
 
-      await expect(userDatabase.delete(mockId)).rejects.toThrow(
+      await expect(authDatabase.deleteUser(mockId)).rejects.toThrow(
         "User not found"
       );
       expect(mock).toHaveBeenCalledWith({ _id: mockId });

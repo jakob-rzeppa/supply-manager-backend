@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 import { ProductModel } from "../../database/database.models";
-import { Product } from "../../database/database.types";
-import productDatabase from "../../database/productDatabase";
+import { Product } from "../../database/product/productDatabase.types";
+import productDatabase from "../../database/product/productDatabase";
 
 const mockId = "ffffffffffffffffffffffff";
 

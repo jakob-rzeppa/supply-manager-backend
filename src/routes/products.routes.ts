@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import database from "../database/database";
 import ResponseDto from "../dtos/response.dto";
 import ProductDto from "../dtos/product.dto";
-import { Product } from "../database/database.types";
+import { Product } from "../database/product/productDatabase.types";
 import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import {
@@ -37,7 +37,7 @@ productsRoutes.get(
     const userId: string = res.locals.user.id;
 
     const [dbError, products] = await catchPromiseError(
-      database.products.getByUserId(userId as string)
+      database.products.getProductByUserId(userId as string)
     );
     if (dbError) return next(dbError);
 
@@ -83,7 +83,7 @@ productsRoutes.get(
     const id: string = req.params.id;
 
     const [dbError, product] = await catchPromiseError(
-      database.products.getById(id)
+      database.products.getProductById(id)
     );
     if (dbError) return next(dbError);
 
@@ -139,7 +139,7 @@ productsRoutes.post(
     };
 
     const [dbError, newProduct] = await catchPromiseError(
-      database.products.create(productToCreate)
+      database.products.createProduct(productToCreate)
     );
     if (dbError) return next(dbError);
 
@@ -187,7 +187,7 @@ productsRoutes.put(
     > = req.body;
 
     const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.update(id, {
+      database.products.updateProduct(id, {
         ean: productInfoToUpdate.ean,
         name: productInfoToUpdate.name,
         description: productInfoToUpdate.description,
@@ -240,7 +240,7 @@ productsRoutes.delete(
     const id: string = req.params.id;
 
     const [dbError, product] = await catchPromiseError(
-      database.products.getById(id)
+      database.products.getProductById(id)
     );
     if (dbError) return next(dbError);
 
@@ -249,8 +249,12 @@ productsRoutes.delete(
         new AuthorisationError("User does not have access to this product")
       );
 
-    const [error] = await catchPromiseError(database.products.deleteById(id));
+    const [error] = await catchPromiseError(
+      database.products.deleteProductById(id)
+    );
     if (error) return next(error);
+
+    //TODO: delete all items and products related to user
 
     const responseBody: ResponseDto<null> = {
       message: "Product deleted successfully",

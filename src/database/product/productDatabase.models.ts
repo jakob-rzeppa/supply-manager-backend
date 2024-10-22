@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import type { Product, User, Item } from "./database.types";
+import type { Product, Item } from "./productDatabase.types";
 
 const itemSchema = new mongoose.Schema<Item>({
   expiration_date: { type: Date, required: false },
@@ -16,12 +16,3 @@ const productSchema = new mongoose.Schema<Product>({
 });
 
 export const ProductModel = mongoose.model<Product>("Product", productSchema);
-
-const userSchema = new mongoose.Schema<User>({
-  email: { type: String, required: true },
-  password: { type: String, required: true },
-
-  name: { type: String, required: true },
-});
-
-export const UserModel = mongoose.model<User>("User", userSchema);

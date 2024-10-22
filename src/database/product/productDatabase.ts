@@ -1,7 +1,7 @@
-import NotFoundError from "../errors/db/notFoundError";
-import ResourceAlreadyExistsError from "../errors/db/resourceAlreadyExistsError";
-import { Product } from "./database.types";
-import { ProductModel } from "./database.models";
+import NotFoundError from "../../errors/db/notFoundError";
+import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
+import { Product } from "./productDatabase.types";
+import { ProductModel } from "./productDatabase.models";
 
 const productDatabase = {
   checkIfEanAlreadyExistsForUser: async (userId: string, ean: string) => {
@@ -10,23 +10,26 @@ const productDatabase = {
     return false;
   },
 
-  getByUserId: async (userId: string): Promise<Product[]> => {
+  getProductByUserId: async (userId: string): Promise<Product[]> => {
     return await ProductModel.find({ user_id: userId });
   },
 
-  getById: async (id: string): Promise<Product> => {
+  getProductById: async (id: string): Promise<Product> => {
     const product = await ProductModel.findById(id);
     if (!product) throw new NotFoundError("Product not found");
     return product;
   },
 
-  getByEanAndUserId: async (ean: string, userId: string): Promise<Product> => {
+  getProductByEanAndUserId: async (
+    ean: string,
+    userId: string
+  ): Promise<Product> => {
     const product = await ProductModel.findOne({ ean, user_id: userId });
     if (!product) throw new NotFoundError("Product not found");
     return product;
   },
 
-  create: async (product: Omit<Product, "_id">): Promise<Product> => {
+  createProduct: async (product: Omit<Product, "_id">): Promise<Product> => {
     if (
       await productDatabase.checkIfEanAlreadyExistsForUser(
         product.user_id.toString(),
@@ -41,7 +44,7 @@ const productDatabase = {
     return await newProduct.save();
   },
 
-  update: async (
+  updateProduct: async (
     id: string,
     updateProductObject: Partial<Omit<Product, "_id">>
   ): Promise<Product> => {
@@ -71,7 +74,7 @@ const productDatabase = {
   },
 
   //TODO: delete all items related to product
-  deleteById: async (id: string): Promise<void> => {
+  deleteProductById: async (id: string): Promise<void> => {
     const deleteResponse = await ProductModel.deleteOne({
       _id: id,
     });
@@ -81,7 +84,10 @@ const productDatabase = {
   },
 
   //TODO: delete all items related to product
-  deleteByEanAndUserId: async (ean: string, userId: string): Promise<void> => {
+  deleteProductByEanAndUserId: async (
+    ean: string,
+    userId: string
+  ): Promise<void> => {
     const deleteResponse = await ProductModel.deleteOne({
       ean,
       user_id: userId,

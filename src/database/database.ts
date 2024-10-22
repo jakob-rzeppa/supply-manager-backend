@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import "dotenv/config";
-import productDatabase from "./productDatabase";
-import userDatabase from "./userDatabase";
+import productDatabase from "./product/productDatabase";
+import userDatabase from "./auth/authDatabase";
 import { env } from "../config/env";
 
 const database = {

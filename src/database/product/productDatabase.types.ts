@@ -16,12 +16,3 @@ export interface Product {
 
   items: Item[];
 }
-
-export interface User {
-  _id: mongoose.Types.ObjectId;
-
-  email: string;
-  password: string;
-
-  name: string;
-}

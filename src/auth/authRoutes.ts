@@ -6,11 +6,11 @@ import AuthorisationError from "../errors/auth/authorisationError";
 import validateRequest from "../validation/requestValidation";
 import Joi from "joi";
 import { env } from "../config/env";
+import { catchPromiseError } from "../utilityFunctions/errorHandling";
+import authDatabase from "../database/auth/authDatabase";
+import mongoose from "mongoose";
 
 const authRoutes = Router();
-
-// TODO move to database
-let refreshTokens: string[] = [];
 
 function generateAccessToken(user: { name: string; id: string }) {
   return jwt.sign(user, env.ACCESS_TOKEN_SECRET!, { expiresIn: "30m" });
@@ -37,7 +37,14 @@ authRoutes.post(
 
     const accessToken = generateAccessToken(user);
     const refreshToken = jwt.sign(user, env.REFRESH_TOKEN_SECRET as string);
-    refreshTokens.push(refreshToken);
+
+    const [error] = await catchPromiseError(
+      authDatabase.createRefreshToken({
+        refresh_token: refreshToken,
+        user_id: new mongoose.Types.ObjectId(user.id),
+      })
+    );
+    if (error) return next(error);
 
     res.status(200).json({ accessToken, refreshToken });
   }
@@ -56,7 +63,13 @@ authRoutes.post(
 
     if (!refreshToken)
       return next(new AuthenticationError("No token provided"));
-    if (!refreshTokens.includes(refreshToken))
+
+    const [error, refreshTokens] = await catchPromiseError(
+      authDatabase.getRefreshTokens()
+    );
+    if (error) return next(error);
+
+    if (!refreshTokens.some((token) => token.refresh_token === refreshToken))
       return next(new AuthorisationError("Invalid token"));
 
     jwt.verify(
@@ -80,16 +93,73 @@ authRoutes.post(
   }
 );
 
-authRoutes.delete("/logout", (req: Request, res: Response) => {
-  validateRequest(req, {
-    body: Joi.object({
-      token: Joi.string().required(),
-    }),
-  });
+authRoutes.delete(
+  "/logout",
+  async (req: Request, res: Response, next: NextFunction) => {
+    validateRequest(req, {
+      body: Joi.object({
+        token: Joi.string().required(),
+      }),
+    });
 
-  const token = req.body.token;
+    const token = req.body.token;
 
-  refreshTokens = refreshTokens.filter((t) => t !== token);
+    const [error] = await catchPromiseError(
+      authDatabase.deleteRefreshToken(token)
+    );
+    if (error) return next(error);
+
+    res.sendStatus(204);
+  }
+);
+
+authRoutes.post(
+  "/register",
+  async (req: Request, res: Response, next: NextFunction) => {
+    validateRequest(req, {
+      body: Joi.object({
+        username: Joi.string().required(),
+        password: Joi.string().required(),
+        email: Joi.string().email().required(),
+      }),
+    });
+
+    const username: string = req.body.username;
+    const password: string = req.body.password;
+    const email: string = req.body.email;
+
+    const user = {
+      name: username,
+      id: "ffffffffffffffffffffffff",
+      email,
+    };
+
+    // TODO Create user in db
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = jwt.sign(user, env.REFRESH_TOKEN_SECRET as string);
+
+    const [error] = await catchPromiseError(
+      authDatabase.createRefreshToken({
+        refresh_token: refreshToken,
+        user_id: new mongoose.Types.ObjectId(user.id),
+      })
+    );
+    if (error) return next(error);
+
+    res.status(200).json({ accessToken, refreshToken });
+  }
+);
+
+authRoutes.put("/update", async (req: Request, res: Response) => {
+  // TODO Update user in db
+  res.sendStatus(204);
+});
+
+authRoutes.delete("/delete", async (req: Request, res: Response) => {
+  // TODO Delete user from db
+  // TODO Delete all products for user from db
+  // TODO Delete all refresh tokens for user from db
   res.sendStatus(204);
 });
 
