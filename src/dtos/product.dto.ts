@@ -1,8 +1,6 @@
 import type ItemDto from "./item.dto.ts";
 
 export default interface ProductDto {
-  id: string;
-
   ean: string;
   user_id: string;
 

@@ -9,6 +9,7 @@ import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import {
   createProductBodySchema,
+  eanSchema,
   idSchema,
   updateProductBodySchema,
 } from "../validation/productValidationSchemas";
@@ -37,13 +38,12 @@ productsRoutes.get(
     const userId: string = res.locals.user.id;
 
     const [dbError, products] = await catchPromiseError(
-      database.products.getProductByUserId(userId as string)
+      database.products.getProducts(userId as string)
     );
     if (dbError) return next(dbError);
 
     const productDtos: ProductDto[] = products.map((product) => {
       return {
-        id: product._id.toString(),
         ean: product.ean,
         user_id: product.user_id.toString(),
         name: product.name,
@@ -62,11 +62,11 @@ productsRoutes.get(
 );
 
 productsRoutes.get(
-  "/:id",
+  "/:ean",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["id", idSchema]]),
+        params: new Map([["ean", eanSchema]]),
       });
       if (validationError) return next(validationError);
     }
@@ -80,15 +80,14 @@ productsRoutes.get(
     }
 
     const user_id: string = res.locals.user.id;
-    const id: string = req.params.id;
+    const ean: string = req.params.ean;
 
     const [dbError, product] = await catchPromiseError(
-      database.products.getProductById(id)
+      database.products.getProductByEan(ean, user_id)
     );
     if (dbError) return next(dbError);
 
     const productDtos: ProductDto = {
-      id: product._id.toString(),
       ean: product.ean,
       user_id: product.user_id.toString(),
       name: product.name,
@@ -144,7 +143,6 @@ productsRoutes.post(
     if (dbError) return next(dbError);
 
     const productDto: ProductDto = {
-      id: newProduct._id.toString(),
       ean: newProduct.ean,
       user_id: newProduct.user_id.toString(),
       name: newProduct.name,
@@ -162,11 +160,11 @@ productsRoutes.post(
 );
 
 productsRoutes.put(
-  "/:id",
+  "/:ean",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["id", idSchema]]),
+        params: new Map([["ean", eanSchema]]),
         body: updateProductBodySchema,
       });
       if (validationError) return next(validationError);
@@ -181,14 +179,13 @@ productsRoutes.put(
     }
 
     const userId: string = res.locals.user.id;
-    const id: string = req.params.id;
+    const ean: string = req.params.ean;
     const productInfoToUpdate: Partial<
       Omit<ProductDto, "id" | "items" | "user_id">
     > = req.body;
 
     const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.updateProduct(id, {
-        ean: productInfoToUpdate.ean,
+      database.products.updateProduct(ean, userId, {
         name: productInfoToUpdate.name,
         description: productInfoToUpdate.description,
       })
@@ -196,7 +193,6 @@ productsRoutes.put(
     if (dbError) return next(dbError);
 
     const productDto: ProductDto = {
-      id: updatedProduct._id.toString(),
       ean: updatedProduct.ean,
       user_id: updatedProduct.user_id.toString(),
       name: updatedProduct.name,
@@ -219,11 +215,11 @@ productsRoutes.put(
 );
 
 productsRoutes.delete(
-  "/:id",
+  "/:ean",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["id", idSchema]]),
+        params: new Map([["ean", idSchema]]),
       });
       if (validationError) return next(validationError);
     }
@@ -237,24 +233,17 @@ productsRoutes.delete(
     }
 
     const userId: string = res.locals.user.id;
-    const id: string = req.params.id;
+    const ean: string = req.params.id;
 
     const [dbError, product] = await catchPromiseError(
-      database.products.getProductById(id)
+      database.products.getProductByEan(ean, userId)
     );
     if (dbError) return next(dbError);
 
-    if (userId !== product.user_id.toString())
-      return next(
-        new AuthorisationError("User does not have access to this product")
-      );
-
     const [error] = await catchPromiseError(
-      database.products.deleteProductById(id)
+      database.products.deleteProductByEan(ean, userId)
     );
     if (error) return next(error);
-
-    //TODO: delete all items and products related to user
 
     const responseBody: ResponseDto<null> = {
       message: "Product deleted successfully",

@@ -1,13 +1,9 @@
 import type mongoose from "mongoose";
 
 export interface Item {
-  _id: mongoose.Types.ObjectId;
-
   expiration_date: Date;
 }
 export interface Product {
-  _id: mongoose.Types.ObjectId;
-
   ean: string;
   user_id: mongoose.Types.ObjectId;
 

@@ -1,39 +1,30 @@
 import NotFoundError from "../../errors/db/notFoundError";
 import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
-import { Product } from "./productDatabase.types";
+import { Item, Product } from "./productDatabase.types";
 import { ProductModel } from "./productDatabase.models";
 
 const productDatabase = {
-  checkIfEanAlreadyExistsForUser: async (userId: string, ean: string) => {
+  checkIfEanAlreadyExistsForUser: async (ean: string, userId: string) => {
     const product = await ProductModel.findOne({ user_id: userId, ean });
     if (product) return true;
     return false;
   },
 
-  getProductByUserId: async (userId: string): Promise<Product[]> => {
+  getProducts: async (userId: string): Promise<Product[]> => {
     return await ProductModel.find({ user_id: userId });
   },
 
-  getProductById: async (id: string): Promise<Product> => {
-    const product = await ProductModel.findById(id);
-    if (!product) throw new NotFoundError("Product not found");
-    return product;
-  },
-
-  getProductByEanAndUserId: async (
-    ean: string,
-    userId: string
-  ): Promise<Product> => {
+  getProductByEan: async (ean: string, userId: string): Promise<Product> => {
     const product = await ProductModel.findOne({ ean, user_id: userId });
     if (!product) throw new NotFoundError("Product not found");
     return product;
   },
 
-  createProduct: async (product: Omit<Product, "_id">): Promise<Product> => {
+  createProduct: async (product: Product): Promise<Product> => {
     if (
       await productDatabase.checkIfEanAlreadyExistsForUser(
-        product.user_id.toString(),
-        product.ean
+        product.ean,
+        product.user_id.toString()
       )
     )
       throw new ResourceAlreadyExistsError(
@@ -45,26 +36,13 @@ const productDatabase = {
   },
 
   updateProduct: async (
-    id: string,
-    updateProductObject: Partial<Omit<Product, "_id">>
+    ean: string,
+    userId: string,
+    updateProductObject: Partial<Omit<Product, "ean" | "user_id">>
   ): Promise<Product> => {
-    const product = await ProductModel.findById(id);
+    const product = await ProductModel.findOne({ ean, user_id: userId });
     if (!product) throw new NotFoundError("Product not found");
 
-    if (updateProductObject.ean !== undefined) {
-      if (
-        await productDatabase.checkIfEanAlreadyExistsForUser(
-          updateProductObject.user_id
-            ? updateProductObject.user_id.toString()
-            : product.user_id.toString(),
-          updateProductObject.ean
-        )
-      )
-        throw new ResourceAlreadyExistsError(
-          "Product with this EAN already exists for this user"
-        );
-      product.ean = updateProductObject.ean;
-    }
     if (updateProductObject.name !== undefined)
       product.name = updateProductObject.name;
     if (updateProductObject.description !== undefined)
@@ -73,21 +51,7 @@ const productDatabase = {
     return await product.save();
   },
 
-  //TODO: delete all items related to product
-  deleteProductById: async (id: string): Promise<void> => {
-    const deleteResponse = await ProductModel.deleteOne({
-      _id: id,
-    });
-    if (deleteResponse.deletedCount === 0) {
-      throw new NotFoundError("Product not found");
-    }
-  },
-
-  //TODO: delete all items related to product
-  deleteProductByEanAndUserId: async (
-    ean: string,
-    userId: string
-  ): Promise<void> => {
+  deleteProductByEan: async (ean: string, userId: string): Promise<void> => {
     const deleteResponse = await ProductModel.deleteOne({
       ean,
       user_id: userId,

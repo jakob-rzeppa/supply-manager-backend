@@ -1,13 +1,12 @@
 import mongoose from "mongoose";
 
-import { ProductModel } from "../../database/database.models";
+import { ProductModel } from "../../database/product/productDatabase.models";
 import { Product } from "../../database/product/productDatabase.types";
 import productDatabase from "../../database/product/productDatabase";
 
 const mockId = "ffffffffffffffffffffffff";
 
 const mockProduct: Product = {
-  _id: new mongoose.Types.ObjectId(mockId),
   name: "test",
   description: "test",
   user_id: new mongoose.Types.ObjectId(mockId),
@@ -22,8 +21,8 @@ describe("productDatabase", () => {
         .spyOn(ProductModel, "findOne")
         .mockResolvedValueOnce(mockProduct);
       const exists = await productDatabase.checkIfEanAlreadyExistsForUser(
-        mockId,
-        mockProduct.ean
+        mockProduct.ean,
+        mockId
       );
       expect(exists).toBe(true);
       expect(mock).toHaveBeenCalledWith({
@@ -37,8 +36,8 @@ describe("productDatabase", () => {
         .spyOn(ProductModel, "findOne")
         .mockResolvedValueOnce(null);
       const exists = await productDatabase.checkIfEanAlreadyExistsForUser(
-        mockId,
-        mockProduct.ean
+        mockProduct.ean,
+        mockId
       );
       expect(exists).toBe(false);
       expect(mock).toHaveBeenCalledWith({
@@ -48,43 +47,23 @@ describe("productDatabase", () => {
     });
   });
 
-  describe("getProductsByUserId", () => {
+  describe("getProducts", () => {
     it("should call ProductModel.find with the correct userId and return products", async () => {
       const mock = jest
         .spyOn(ProductModel, "find")
         .mockResolvedValueOnce([mockProduct]);
-      const products = await productDatabase.getByUserId(mockId);
+      const products = await productDatabase.getProducts(mockId);
       expect(products).toEqual([mockProduct]);
       expect(mock).toHaveBeenCalledWith({ user_id: mockId });
     });
   });
 
-  describe("getProductById", () => {
-    it("should call ProductModel.findById with the correct id and return a product", async () => {
-      const mock = jest
-        .spyOn(ProductModel, "findById")
-        .mockResolvedValueOnce(mockProduct);
-      const product = await productDatabase.getById(mockId);
-      expect(product).toEqual(mockProduct);
-      expect(mock).toHaveBeenCalledWith(mockId);
-    });
-    it("should throw a NotFoundError if ProductModel.findById returns null", async () => {
-      const mock = jest
-        .spyOn(ProductModel, "findById")
-        .mockResolvedValueOnce(null);
-      await expect(productDatabase.getById(mockId)).rejects.toThrow(
-        "Product not found"
-      );
-      expect(mock).toHaveBeenCalledWith(mockId);
-    });
-  });
-
-  describe("getProductByEanAndUserId", () => {
+  describe("getProductByEan", () => {
     it("should call ProductModel.findOne with the correct ean and userId and return a product", async () => {
       const mock = jest
         .spyOn(ProductModel, "findOne")
         .mockResolvedValueOnce(mockProduct);
-      const product = await productDatabase.getByEanAndUserId(
+      const product = await productDatabase.getProductByEan(
         mockProduct.ean,
         mockProduct.user_id.toString()
       );
@@ -99,7 +78,7 @@ describe("productDatabase", () => {
         .spyOn(ProductModel, "findOne")
         .mockResolvedValueOnce(null);
       await expect(
-        productDatabase.getByEanAndUserId(mockProduct.ean, mockId)
+        productDatabase.getProductByEan(mockProduct.ean, mockId)
       ).rejects.toThrow("Product not found");
       expect(mock).toHaveBeenCalledWith({
         ean: mockProduct.ean,
@@ -116,135 +95,89 @@ describe("productDatabase", () => {
       const checkIfEanAlreadyExistsForUserMock = jest
         .spyOn(productDatabase, "checkIfEanAlreadyExistsForUser")
         .mockResolvedValueOnce(false);
-      const product = await productDatabase.create(mockProduct);
+      const product = await productDatabase.createProduct(mockProduct);
       expect(product).toEqual(mockProduct);
       expect(saveMock).toHaveBeenCalled();
       expect(checkIfEanAlreadyExistsForUserMock).toHaveBeenCalledWith(
-        mockProduct.user_id.toString(),
-        mockProduct.ean
+        mockProduct.ean,
+        mockProduct.user_id.toString()
       );
     });
     it("should throw a ResourceAlreadyExistsError if ean already exists for user", async () => {
       const mock = jest
         .spyOn(productDatabase, "checkIfEanAlreadyExistsForUser")
         .mockResolvedValueOnce(true);
-      await expect(productDatabase.create(mockProduct)).rejects.toThrow(
+      await expect(productDatabase.createProduct(mockProduct)).rejects.toThrow(
         "Product with this EAN already exists for this user"
       );
       expect(mock).toHaveBeenCalledWith(
-        mockProduct.user_id.toString(),
-        mockProduct.ean
+        mockProduct.ean,
+        mockProduct.user_id.toString()
       );
     });
   });
 
   describe("updateProduct", () => {
-    it("should call ProductModel.findById with the correct id and update the product", async () => {
-      const mockUpdatedProduct = {
-        name: "newName",
-        ean: "newEan",
-        description: "newDescription",
-        user_id: new mongoose.Types.ObjectId(mockId),
-      };
-      let product = new ProductModel(mockProduct);
-
-      const findByIdMock = jest
-        .spyOn(ProductModel, "findById")
-        .mockResolvedValueOnce(product);
-      const checkIfEanAlreadyExistsForUserMock = jest
-        .spyOn(productDatabase, "checkIfEanAlreadyExistsForUser")
-        .mockResolvedValueOnce(false);
+    it("should update a product and return it", async () => {
       const saveMock = jest
         .spyOn(ProductModel.prototype, "save")
-        .mockResolvedValueOnce(product);
-
-      const updatedProduct = await productDatabase.update(
-        mockId,
-        mockUpdatedProduct
-      );
-
-      expect(updatedProduct).toEqual(product);
-      expect(findByIdMock).toHaveBeenCalledWith(mockId);
-      expect(checkIfEanAlreadyExistsForUserMock).toHaveBeenCalledWith(
-        mockProduct.user_id.toString(),
-        mockUpdatedProduct.ean
-      );
-      expect(saveMock).toHaveBeenCalled();
-    });
-    it("should throw a NotFoundError if ProductModel.findById returns null", async () => {
-      const findByIdMock = jest
-        .spyOn(ProductModel, "findById")
-        .mockResolvedValueOnce(null);
-      const updateProductObject = { name: "newName", ean: "newEan" };
-      await expect(
-        productDatabase.update(mockId, updateProductObject)
-      ).rejects.toThrow("Product not found");
-      expect(findByIdMock).toHaveBeenCalledWith(mockId);
-    });
-    it("should throw a ResourceAlreadyExistsError if ean already exists for user", async () => {
-      let product = new ProductModel(mockProduct);
-      const findByIdMock = jest
-        .spyOn(ProductModel, "findById")
-        .mockResolvedValueOnce(product);
-      const checkIfEanAlreadyExistsForUserMock = jest
-        .spyOn(productDatabase, "checkIfEanAlreadyExistsForUser")
-        .mockResolvedValueOnce(true);
-      const updateProductObject = { ean: "newEan", name: "newName" };
-      await expect(
-        productDatabase.update(mockId, updateProductObject)
-      ).rejects.toThrow("Product with this EAN already exists for this user");
-      expect(findByIdMock).toHaveBeenCalledWith(mockId);
-      expect(checkIfEanAlreadyExistsForUserMock).toHaveBeenCalledWith(
-        mockProduct.user_id.toString(),
-        "newEan"
-      );
-    });
-  });
-  describe("deleteProductById", () => {
-    it("should call ProductModel.deleteOne with the correct id", async () => {
-      const deleteOneMock = jest
-        .spyOn(ProductModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
-      await productDatabase.deleteById(mockId);
-      expect(deleteOneMock).toHaveBeenCalledWith({ _id: mockId });
-    });
-    it("should throw a NotFoundError if ProductModel.deleteOne returns deletedCount 0", async () => {
-      const deleteOneMock = jest
-        .spyOn(ProductModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 0 } as any);
-      await expect(productDatabase.deleteById(mockId)).rejects.toThrow(
-        "Product not found"
-      );
-      expect(deleteOneMock).toHaveBeenCalledWith({ _id: mockId });
-    });
-  });
-  describe("deleteProductByEanAndUserId", () => {
-    it("should call ProductModel.deleteOne with the correct ean and userId", async () => {
-      const deleteOneMock = jest
-        .spyOn(ProductModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
-      await productDatabase.deleteByEanAndUserId(
+        .mockResolvedValueOnce(mockProduct);
+      const findOneMock = jest
+        .spyOn(ProductModel, "findOne")
+        .mockResolvedValueOnce(new ProductModel(mockProduct));
+      const product = await productDatabase.updateProduct(
         mockProduct.ean,
-        mockProduct.user_id.toString()
+        mockId,
+        mockProduct
       );
-      expect(deleteOneMock).toHaveBeenCalledWith({
+      expect(product).toEqual(mockProduct);
+      expect(saveMock).toHaveBeenCalled();
+      expect(findOneMock).toHaveBeenCalledWith({
+        ean: mockProduct.ean,
+        user_id: mockId,
+      });
+    });
+
+    it("should throw a NotFoundError if getProductByEan returns null", async () => {
+      const findOneMock = jest
+        .spyOn(ProductModel, "findOne")
+        .mockResolvedValueOnce(null);
+      await expect(
+        productDatabase.updateProduct(
+          mockProduct.ean,
+          mockProduct.user_id.toString(),
+          mockProduct
+        )
+      ).rejects.toThrow("Product not found");
+      expect(findOneMock).toHaveBeenCalledWith({
         ean: mockProduct.ean,
         user_id: mockProduct.user_id.toString(),
       });
     });
+  });
+
+  describe("deleteProductByEan", () => {
+    it("should call ProductModel.deleteOne with the correct ean and userId", async () => {
+      const deleteOneMock = jest
+        .spyOn(ProductModel, "deleteOne")
+        .mockResolvedValueOnce({ deletedCount: 1 } as any);
+      await productDatabase.deleteProductByEan("ean", "userId");
+      expect(deleteOneMock).toHaveBeenCalledWith({
+        ean: "ean",
+        user_id: "userId",
+      });
+    });
+
     it("should throw a NotFoundError if ProductModel.deleteOne returns deletedCount 0", async () => {
       const deleteOneMock = jest
         .spyOn(ProductModel, "deleteOne")
         .mockResolvedValueOnce({ deletedCount: 0 } as any);
       await expect(
-        productDatabase.deleteByEanAndUserId(
-          mockProduct.ean,
-          mockProduct.user_id.toString()
-        )
+        productDatabase.deleteProductByEan("ean", "userId")
       ).rejects.toThrow("Product not found");
       expect(deleteOneMock).toHaveBeenCalledWith({
-        ean: mockProduct.ean,
-        user_id: mockProduct.user_id.toString(),
+        ean: "ean",
+        user_id: "userId",
       });
     });
   });
