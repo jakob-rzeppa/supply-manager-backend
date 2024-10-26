@@ -8,6 +8,7 @@ import { Product } from "../database/product/productDatabase.types";
 import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import {
+  createItemBodySchema,
   createProductBodySchema,
   eanSchema,
   idSchema,
@@ -18,6 +19,7 @@ import Joi from "joi";
 import { userSchema } from "../validation/userValidationSchemas";
 import AuthorisationError from "../errors/auth/authorisationError";
 import authMiddleware from "../auth/authMiddleware";
+import ItemDto from "../dtos/item.dto";
 
 // TODO logging
 const productsRoutes = Router();
@@ -48,9 +50,13 @@ productsRoutes.get(
         user_id: product.user_id.toString(),
         name: product.name,
         description: product.description,
-        items: product.items,
+        items: product.items.map((item) => {
+          return { expiration_date: item.expiration_date } as ItemDto;
+        }),
       };
     });
+
+    console.log(productDtos);
 
     const responseBody: ResponseDto<ProductDto[]> = {
       message: "Products retrieved successfully",
@@ -92,7 +98,9 @@ productsRoutes.get(
       user_id: product.user_id.toString(),
       name: product.name,
       description: product.description,
-      items: product.items,
+      items: product.items.map((item) => {
+        return { expiration_date: item.expiration_date } as ItemDto;
+      }),
     };
 
     if (user_id !== product.user_id.toString())
@@ -219,7 +227,7 @@ productsRoutes.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["ean", idSchema]]),
+        params: new Map([["ean", eanSchema]]),
       });
       if (validationError) return next(validationError);
     }
@@ -233,12 +241,7 @@ productsRoutes.delete(
     }
 
     const userId: string = res.locals.user.id;
-    const ean: string = req.params.id;
-
-    const [dbError, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
-    );
-    if (dbError) return next(dbError);
+    const ean: string = req.params.ean;
 
     const [error] = await catchPromiseError(
       database.products.deleteProductByEan(ean, userId)
@@ -248,6 +251,174 @@ productsRoutes.delete(
     const responseBody: ResponseDto<null> = {
       message: "Product deleted successfully",
     };
+    res.status(200).json(responseBody);
+  }
+);
+
+productsRoutes.post(
+  "/:ean/items",
+  async (req: Request, res: Response, next: NextFunction) => {
+    {
+      const validationError = validateRequest(req, {
+        params: new Map([["ean", eanSchema]]),
+        body: createItemBodySchema,
+      });
+      if (validationError) return next(validationError);
+    }
+    {
+      const validationError = validateLocals(
+        res,
+        Joi.object({ user: userSchema })
+      );
+      if (validationError) return next(validationError);
+    }
+
+    const ean: string = req.params.ean;
+    const userId: string = res.locals.user.id;
+    const item: ItemDto = req.body;
+
+    const [error, product] = await catchPromiseError(
+      database.products.getProductByEan(ean, userId)
+    );
+    if (error) return next(error);
+
+    const items = product.items;
+
+    items.push(item);
+
+    items.sort(
+      (a, b) =>
+        new Date(a.expiration_date).getTime() -
+        new Date(b.expiration_date).getTime()
+    );
+
+    const [dbError, updatedProduct] = await catchPromiseError(
+      database.products.updateProduct(ean, userId, { items })
+    );
+    if (dbError) return next(dbError);
+
+    const responseBody: ResponseDto<ProductDto> = {
+      message: "Item added successfully",
+      data: {
+        ean: updatedProduct.ean,
+        user_id: updatedProduct.user_id.toString(),
+        name: updatedProduct.name,
+        description: updatedProduct.description,
+        items: updatedProduct.items.map((item) => {
+          return { expiration_date: item.expiration_date } as ItemDto;
+        }),
+      },
+    };
+
+    res.status(200).json(responseBody);
+  }
+);
+
+productsRoutes.put(
+  "/:ean/items/:index",
+  async (req: Request, res: Response, next: NextFunction) => {
+    {
+      const validationError = validateRequest(req, {
+        params: new Map([
+          ["ean", eanSchema],
+          ["index", Joi.string().regex(/^\d+$/).required()],
+        ]),
+        body: createItemBodySchema,
+      });
+      if (validationError) return next(validationError);
+    }
+    {
+      const validationError = validateLocals(
+        res,
+        Joi.object({ user: userSchema })
+      );
+      if (validationError) return next(validationError);
+    }
+
+    const ean: string = req.params.ean;
+    const userId: string = res.locals.user.id;
+    const index: number = parseInt(req.params.index);
+    const item: ItemDto = req.body;
+
+    const [error, product] = await catchPromiseError(
+      database.products.getProductByEan(ean, userId)
+    );
+    if (error) return next(error);
+
+    const items = product.items;
+
+    items[index] = item;
+
+    items.sort(
+      (a, b) =>
+        new Date(a.expiration_date).getTime() -
+        new Date(b.expiration_date).getTime()
+    );
+
+    const [dbError] = await catchPromiseError(
+      database.products.updateProduct(ean, userId, { items })
+    );
+    if (dbError) return next(dbError);
+
+    const responseBody: ResponseDto<ProductDto> = {
+      message: "Item updated successfully",
+      data: {
+        ean: product.ean,
+        user_id: product.user_id.toString(),
+        name: product.name,
+        description: product.description,
+        items: product.items.map((item) => {
+          return { expiration_date: item.expiration_date } as ItemDto;
+        }),
+      },
+    };
+
+    res.status(200).json(responseBody);
+  }
+);
+
+productsRoutes.delete(
+  "/:ean/items/:index",
+  async (req: Request, res: Response, next: NextFunction) => {
+    {
+      const validationError = validateRequest(req, {
+        params: new Map([
+          ["ean", eanSchema],
+          ["index", Joi.string().regex(/^\d+$/).required()],
+        ]),
+      });
+      if (validationError) return next(validationError);
+    }
+    {
+      const validationError = validateLocals(
+        res,
+        Joi.object({ user: userSchema })
+      );
+      if (validationError) return next(validationError);
+    }
+
+    const ean: string = req.params.ean;
+    const userId: string = res.locals.user.id;
+    const index: number = parseInt(req.params.index);
+
+    const [error, product] = await catchPromiseError(
+      database.products.getProductByEan(ean, userId)
+    );
+    if (error) return next(error);
+
+    const items = product.items;
+
+    items.splice(index, 1);
+
+    const [dbError] = await catchPromiseError(
+      database.products.updateProduct(ean, userId, { items })
+    );
+    if (dbError) return next(dbError);
+
+    const responseBody: ResponseDto<null> = {
+      message: "Item deleted successfully",
+    };
+
     res.status(200).json(responseBody);
   }
 );

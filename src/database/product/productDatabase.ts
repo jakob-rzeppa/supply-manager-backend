@@ -47,6 +47,8 @@ const productDatabase = {
       product.name = updateProductObject.name;
     if (updateProductObject.description !== undefined)
       product.description = updateProductObject.description;
+    if (updateProductObject.items !== undefined)
+      product.items = updateProductObject.items;
 
     return await product.save();
   },

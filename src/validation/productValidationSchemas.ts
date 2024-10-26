@@ -13,3 +13,7 @@ export const updateProductBodySchema = Joi.object({
   name: Joi.string().optional(),
   description: Joi.string().allow("").optional(),
 });
+
+export const createItemBodySchema = Joi.object({
+  expiration_date: Joi.date().required(),
+});
