@@ -7,11 +7,11 @@ export interface User {
   password: string;
 
   name: string;
+
+  isVerified: boolean;
 }
 
-export interface RefreshToken {
-  _id: mongoose.Types.ObjectId;
-
+export interface AccessToken {
   user_id: mongoose.Types.ObjectId;
-  refresh_token: string;
+  token: string;
 }

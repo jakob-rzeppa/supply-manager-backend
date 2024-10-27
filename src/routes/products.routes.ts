@@ -27,7 +27,7 @@ const productsRoutes = Router();
 productsRoutes.use(authMiddleware);
 
 productsRoutes.get(
-  "/",
+  "",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateLocals(
@@ -118,7 +118,7 @@ productsRoutes.get(
 );
 
 productsRoutes.post(
-  "/",
+  "",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {

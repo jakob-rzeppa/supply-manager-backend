@@ -29,22 +29,15 @@ describe("authMiddleware", () => {
   });
 
   it("should set res.locals.user with the user details if the token is valid", () => {
-    env.ACCESS_TOKEN_SECRET = "secret";
-    const mockUser = { name: "name", id: "id", email: "email" };
-
-    jwt.sign(mockUser, env.ACCESS_TOKEN_SECRET, (err, token) => {
-      const req = {
-        headers: { authorization: `bearer ${token}` },
-      } as any as Request;
-      const res = { locals: {} } as Response;
-      const next = jest.fn() as NextFunction;
-      authMiddleware(req, res, next);
-      expect(res.locals.user).toEqual({
-        name: mockUser.name,
-        id: mockUser.id,
-        email: mockUser.email,
-      });
-      expect(next).toHaveBeenCalled();
-    });
+    const user = { name: "name", id: "id", email: "email" };
+    const token = jwt.sign(user, env.ACCESS_TOKEN_SECRET);
+    const req = {
+      headers: { authorization: `bearer ${token}` },
+    } as any as Request;
+    const res = { locals: {} } as Response;
+    const next = jest.fn() as NextFunction;
+    authMiddleware(req, res, next);
+    expect(res.locals.user).toEqual(user);
+    expect(next).toHaveBeenCalled();
   });
 });

@@ -1,13 +1,14 @@
-FROM node
+FROM node:16
 
 WORKDIR /app
 
-COPY package.json /app
-COPY package-lock.json /app
+COPY package.json ./
 
 RUN npm install
 
-COPY . /app
+COPY . .
+
+RUN npm rebuild bcrypt --build-from-source
 
 CMD ["npm", "run", "dev"]
 

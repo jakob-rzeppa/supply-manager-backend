@@ -1,15 +1,44 @@
 import NotFoundError from "../../errors/db/notFoundError";
-import { RefreshToken, User } from "./authDatabase.types";
-import { RefreshTokenModel, UserModel } from "./authDatabase.models";
+import { AccessToken, User } from "./authDatabase.types";
+import { AccessTokenModel, UserModel } from "./authDatabase.models";
+import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
+import { get } from "mongoose";
 
 const authDatabase = {
+  isUserExisting: async (user: {
+    email: string | undefined;
+    name: string | undefined;
+  }) => {
+    if (user.email) {
+      const emailExists = await UserModel.exists({
+        email: user.email,
+      });
+
+      if (emailExists)
+        return new ResourceAlreadyExistsError("Email already exists");
+    }
+    if (user.name) {
+      const nameExists = await UserModel.exists({
+        email: user.email,
+      });
+      if (nameExists)
+        return new ResourceAlreadyExistsError("Username already exists");
+    }
+  },
+
+  getUserByEmail: async (email: string): Promise<User> => {
+    const user = await UserModel.findOne({ email });
+    if (!user) throw new NotFoundError("User not found");
+    return user;
+  },
+
   getUserById: async (id: string): Promise<User> => {
     const user = await UserModel.findById(id);
     if (!user) throw new NotFoundError("User not found");
     return user;
   },
 
-  createUser: async (user: User): Promise<User> => {
+  createUser: async (user: Omit<User, "_id">): Promise<User> => {
     const newUser = new UserModel(user);
     return await newUser.save();
   },
@@ -21,12 +50,16 @@ const authDatabase = {
     const user = await UserModel.findById(id);
     if (!user) throw new NotFoundError("User not found");
 
-    Object.keys(updateUserObject).forEach((key) => {
-      const typedKey = key as keyof typeof updateUserObject;
-      if (updateUserObject[typedKey] !== undefined) {
-        user[typedKey] = updateUserObject[typedKey];
-      }
+    const isExistingError = authDatabase.isUserExisting({
+      email: updateUserObject.email,
+      name: updateUserObject.name,
     });
+    if (isExistingError !== undefined) throw isExistingError;
+
+    user.email = updateUserObject.email || user.email;
+    user.name = updateUserObject.name || user.name;
+    user.password = updateUserObject.password || user.password;
+    user.isVerified = updateUserObject.isVerified || user.isVerified;
 
     return await user.save();
   },
@@ -38,24 +71,24 @@ const authDatabase = {
     }
 
     // delete all refresh tokens related to user
-    await RefreshTokenModel.deleteMany({ user_id: id });
+    await AccessTokenModel.deleteMany({ user_id: id });
   },
 
-  getRefreshTokens: async (): Promise<RefreshToken[]> => {
-    return await RefreshTokenModel.find();
+  getAccessTokens: async (): Promise<AccessToken[]> => {
+    return await AccessTokenModel.find();
   },
 
-  createRefreshToken: async (
-    refreshToken: Omit<RefreshToken, "_id">
-  ): Promise<RefreshToken> => {
-    const newRefreshToken = new RefreshTokenModel(refreshToken);
-    return await newRefreshToken.save();
+  createAccessToken: async (
+    AccessToken: Omit<AccessToken, "_id">
+  ): Promise<AccessToken> => {
+    const newAccessToken = new AccessTokenModel(AccessToken);
+    return await newAccessToken.save();
   },
 
-  deleteRefreshToken: async (id: string): Promise<void> => {
-    const deleteResponse = await RefreshTokenModel.deleteOne({ _id: id });
+  deleteAccessToken: async (id: string): Promise<void> => {
+    const deleteResponse = await AccessTokenModel.deleteOne({ _id: id });
     if (deleteResponse.deletedCount === 0) {
-      throw new NotFoundError("Refresh token not found");
+      throw new NotFoundError("Access token not found");
     }
   },
 };

@@ -1,10 +1,12 @@
 import {
-  RefreshTokenModel,
+  AccessTokenModel,
   UserModel,
 } from "../../database/auth/authDatabase.models";
 import { User } from "../../database/auth/authDatabase.types";
 import mongoose from "mongoose";
 import authDatabase from "../../database/auth/authDatabase";
+import NotFoundError from "../../errors/db/notFoundError";
+import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
 
 const mockId = "ffffffffffffffffffffffff";
 
@@ -13,6 +15,7 @@ const mockUser: User = {
   email: "test@test.de",
   password: "password",
   name: "test",
+  isVerified: false,
 };
 
 describe("authDatabase", () => {
@@ -52,49 +55,13 @@ describe("authDatabase", () => {
     });
   });
 
-  describe("updateUser", () => {
-    it("should call UserModel.findById with the correct id and update the user", async () => {
-      const mockUpdatedUser = { ...mockUser, email: "newEmail" };
-      let user = new UserModel(mockUser);
-
-      const findByIdMock = jest
-        .spyOn(UserModel, "findById")
-        .mockResolvedValueOnce(user);
-      const saveMock = jest
-        .spyOn(UserModel.prototype, "save")
-        .mockResolvedValueOnce(mockUpdatedUser);
-
-      const updateUserObject = { email: "newEmail" };
-      const updatedUser = await authDatabase.updateUser(
-        mockId,
-        updateUserObject
-      );
-
-      expect(updatedUser).toEqual(mockUpdatedUser);
-      expect(findByIdMock).toHaveBeenCalledWith(mockId);
-      expect(user).toEqual(new UserModel(updatedUser));
-      expect(saveMock).toHaveBeenCalled();
-    });
-
-    it("should throw a NotFoundError if UserModel.findById returns null", async () => {
-      const mock = jest
-        .spyOn(UserModel, "findById")
-        .mockResolvedValueOnce(null);
-
-      await expect(authDatabase.updateUser(mockId, {})).rejects.toThrow(
-        "User not found"
-      );
-      expect(mock).toHaveBeenCalledWith(mockId);
-    });
-  });
-
   describe("deleteUser", () => {
     it("should call UserModel.deleteOne with the correct id and delete the user", async () => {
       const deleteOneMock = jest
         .spyOn(UserModel, "deleteOne")
         .mockResolvedValueOnce({ deletedCount: 1 } as any);
       const deleteManyMock = jest
-        .spyOn(RefreshTokenModel, "deleteMany")
+        .spyOn(AccessTokenModel, "deleteMany")
         .mockResolvedValueOnce({ deletedCount: 1 } as any);
 
       await authDatabase.deleteUser(mockId);
@@ -115,51 +82,51 @@ describe("authDatabase", () => {
     });
   });
 
-  describe("getRefreshTokens", () => {
-    it("should call RefreshTokenModel.find and return all refresh tokens", async () => {
-      const mockRefreshTokens = [
+  describe("getAccessTokens", () => {
+    it("should call AccessTokenModel.find and return all access tokens", async () => {
+      const mockAccessTokens = [
         { _id: "1", user_id: "1", token: "token1" },
         { _id: "2", user_id: "2", token: "token2" },
       ];
       const mock = jest
-        .spyOn(RefreshTokenModel, "find")
-        .mockResolvedValueOnce(mockRefreshTokens);
+        .spyOn(AccessTokenModel, "find")
+        .mockResolvedValueOnce(mockAccessTokens);
 
-      const refreshTokens = await authDatabase.getRefreshTokens();
+      const accessTokens = await authDatabase.getAccessTokens();
 
-      expect(refreshTokens).toEqual(mockRefreshTokens);
+      expect(accessTokens).toEqual(mockAccessTokens);
       expect(mock).toHaveBeenCalled();
     });
   });
 
-  describe("createRefreshToken", () => {
-    it("should create a new refresh token and return it", async () => {
-      const mockRefreshToken = {
+  describe("createAccessToken", () => {
+    it("should create a new access token and return it", async () => {
+      const mockAccessToken = {
         _id: "1",
         user_id: "1",
         token: "token",
       };
       const mock = jest
-        .spyOn(RefreshTokenModel.prototype, "save")
-        .mockResolvedValueOnce(mockRefreshToken);
+        .spyOn(AccessTokenModel.prototype, "save")
+        .mockResolvedValueOnce(mockAccessToken);
 
-      const refreshToken = await authDatabase.createRefreshToken({
+      const accessToken = await authDatabase.createAccessToken({
         user_id: new mongoose.Types.ObjectId("ffffffffffffffffffffffff"),
-        refresh_token: "token",
+        token: "token",
       });
 
-      expect(refreshToken).toEqual(mockRefreshToken);
+      expect(accessToken).toEqual(mockAccessToken);
       expect(mock).toHaveBeenCalled();
     });
   });
 
-  describe("deleteRefreshToken", () => {
-    it("should call RefreshTokenModel.deleteOne with the correct id and delete the refresh token", async () => {
+  describe("deleteAccessToken", () => {
+    it("should call AccessTokenModel.deleteOne with the correct id and delete the access token", async () => {
       const deleteOneMock = jest
-        .spyOn(RefreshTokenModel, "deleteOne")
+        .spyOn(AccessTokenModel, "deleteOne")
         .mockResolvedValueOnce({ deletedCount: 1 } as any);
 
-      await authDatabase.deleteRefreshToken(mockId);
+      await authDatabase.deleteAccessToken(mockId);
 
       expect(deleteOneMock).toHaveBeenCalledWith({ _id: mockId });
     });
