@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 
 import productsRoutes from "./routes/products.routes";
 import globalErrorHandlerMiddleware from "./middlewares/globalErrorHandlerMiddleware";
-import authRoutes from "./auth/authRoutes";
+import authRoutes from "./routes/authRoutes";
 import database from "./database/database";
 import { env } from "./config/env";
 

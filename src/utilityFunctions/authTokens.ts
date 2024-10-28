@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import UserDto from "../dtos/user.dto";
 import authDatabase from "../database/auth/authDatabase";
-import { catchPromiseError } from "../utilityFunctions/errorHandling";
+import { catchPromiseError } from "./errorHandling";
 import mongoose from "mongoose";
 
 export async function generateAccessToken(

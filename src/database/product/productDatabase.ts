@@ -1,6 +1,6 @@
 import NotFoundError from "../../errors/db/notFoundError";
 import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
-import { Item, Product } from "./productDatabase.types";
+import { Product } from "./productDatabase.types";
 import { ProductModel } from "./productDatabase.models";
 
 const productDatabase = {

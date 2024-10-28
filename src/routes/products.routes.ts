@@ -1,27 +1,21 @@
 import { Router, Request, Response, NextFunction } from "express";
-import mongoose from "mongoose";
+import Joi from "joi";
 
-import database from "../database/database";
 import ResponseDto from "../dtos/response.dto";
 import ProductDto from "../dtos/product.dto";
-import { Product } from "../database/product/productDatabase.types";
 import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import {
   createItemBodySchema,
   createProductBodySchema,
   eanSchema,
-  idSchema,
   updateProductBodySchema,
 } from "../validation/productValidationSchemas";
 import validateLocals from "../validation/localsValidation";
-import Joi from "joi";
 import { userSchema } from "../validation/userValidationSchemas";
-import AuthorisationError from "../errors/auth/authorisationError";
-import authMiddleware from "../auth/authMiddleware";
-import ItemDto from "../dtos/item.dto";
+import authMiddleware from "../middlewares/authMiddleware";
+import productsService from "../services/productsService";
 
-// TODO logging
 const productsRoutes = Router();
 
 productsRoutes.use(authMiddleware);
@@ -37,26 +31,10 @@ productsRoutes.get(
       if (validationError) return next(validationError);
     }
 
-    const userId: string = res.locals.user.id;
-
-    const [dbError, products] = await catchPromiseError(
-      database.products.getProducts(userId as string)
+    const [error, productDtos] = await catchPromiseError(
+      productsService.getProductsByUserId(res.locals.user.id)
     );
-    if (dbError) return next(dbError);
-
-    const productDtos: ProductDto[] = products.map((product) => {
-      return {
-        ean: product.ean,
-        user_id: product.user_id.toString(),
-        name: product.name,
-        description: product.description,
-        items: product.items.map((item) => {
-          return { expiration_date: item.expiration_date } as ItemDto;
-        }),
-      };
-    });
-
-    console.log(productDtos);
+    if (error) return next(error);
 
     const responseBody: ResponseDto<ProductDto[]> = {
       message: "Products retrieved successfully",
@@ -85,32 +63,17 @@ productsRoutes.get(
       if (validationError) return next(validationError);
     }
 
-    const user_id: string = res.locals.user.id;
-    const ean: string = req.params.ean;
-
-    const [dbError, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, user_id)
+    const [error, productDto] = await catchPromiseError(
+      productsService.getProductByEanAndUserId(
+        req.params.ean,
+        res.locals.user.id
+      )
     );
-    if (dbError) return next(dbError);
-
-    const productDtos: ProductDto = {
-      ean: product.ean,
-      user_id: product.user_id.toString(),
-      name: product.name,
-      description: product.description,
-      items: product.items.map((item) => {
-        return { expiration_date: item.expiration_date } as ItemDto;
-      }),
-    };
-
-    if (user_id !== product.user_id.toString())
-      return next(
-        new AuthorisationError("User does not have access to this product")
-      );
+    if (error) return next(error);
 
     const responseBody: ResponseDto<ProductDto> = {
       message: "Product retrieved successfully",
-      data: productDtos,
+      data: productDto,
     };
 
     res.status(200).json(responseBody);
@@ -135,28 +98,10 @@ productsRoutes.post(
       if (validationError) return next(validationError);
     }
 
-    const userId: string = res.locals.user.id;
-    const productInfoToCreate: Omit<ProductDto, "id" | "items" | "user_id"> =
-      req.body;
-
-    const productToCreate: Omit<Product, "_id"> = {
-      ...productInfoToCreate,
-      user_id: new mongoose.Types.ObjectId(userId),
-      items: [],
-    };
-
-    const [dbError, newProduct] = await catchPromiseError(
-      database.products.createProduct(productToCreate)
+    const [error, productDto] = await catchPromiseError(
+      productsService.createProduct(res.locals.user.id, req.body)
     );
-    if (dbError) return next(dbError);
-
-    const productDto: ProductDto = {
-      ean: newProduct.ean,
-      user_id: newProduct.user_id.toString(),
-      name: newProduct.name,
-      description: newProduct.description,
-      items: newProduct.items,
-    };
+    if (error) return next(error);
 
     const responseBody: ResponseDto<ProductDto> = {
       message: "Product created succesfully",
@@ -186,32 +131,14 @@ productsRoutes.put(
       if (validationError) return next(validationError);
     }
 
-    const userId: string = res.locals.user.id;
-    const ean: string = req.params.ean;
-    const productInfoToUpdate: Partial<
-      Omit<ProductDto, "id" | "items" | "user_id">
-    > = req.body;
-
-    const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, {
-        name: productInfoToUpdate.name,
-        description: productInfoToUpdate.description,
-      })
+    const [error, productDto] = await catchPromiseError(
+      productsService.updateProduct(
+        req.params.ean,
+        res.locals.user.id,
+        req.body
+      )
     );
-    if (dbError) return next(dbError);
-
-    const productDto: ProductDto = {
-      ean: updatedProduct.ean,
-      user_id: updatedProduct.user_id.toString(),
-      name: updatedProduct.name,
-      description: updatedProduct.description,
-      items: updatedProduct.items,
-    };
-
-    if (userId !== updatedProduct.user_id.toString())
-      return next(
-        new AuthorisationError("User does not have access to this product")
-      );
+    if (error) return next(error);
 
     const responseBody: ResponseDto<ProductDto> = {
       message: "Product updated successfully",
@@ -240,11 +167,8 @@ productsRoutes.delete(
       if (validationError) return next(validationError);
     }
 
-    const userId: string = res.locals.user.id;
-    const ean: string = req.params.ean;
-
     const [error] = await catchPromiseError(
-      database.products.deleteProductByEan(ean, userId)
+      productsService.deleteProductByEan(req.params.ean, res.locals.user.id)
     );
     if (error) return next(error);
 
@@ -273,41 +197,18 @@ productsRoutes.post(
       if (validationError) return next(validationError);
     }
 
-    const ean: string = req.params.ean;
-    const userId: string = res.locals.user.id;
-    const item: ItemDto = req.body;
-
-    const [error, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
+    const [error, productDto] = await catchPromiseError(
+      productsService.addProductItem(
+        req.params.ean,
+        res.locals.user.id,
+        req.body
+      )
     );
     if (error) return next(error);
 
-    const items = product.items;
-
-    items.push(item);
-
-    items.sort(
-      (a, b) =>
-        new Date(a.expiration_date).getTime() -
-        new Date(b.expiration_date).getTime()
-    );
-
-    const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, { items })
-    );
-    if (dbError) return next(dbError);
-
     const responseBody: ResponseDto<ProductDto> = {
       message: "Item added successfully",
-      data: {
-        ean: updatedProduct.ean,
-        user_id: updatedProduct.user_id.toString(),
-        name: updatedProduct.name,
-        description: updatedProduct.description,
-        items: updatedProduct.items.map((item) => {
-          return { expiration_date: item.expiration_date } as ItemDto;
-        }),
-      },
+      data: productDto,
     };
 
     res.status(200).json(responseBody);
@@ -335,42 +236,19 @@ productsRoutes.put(
       if (validationError) return next(validationError);
     }
 
-    const ean: string = req.params.ean;
-    const userId: string = res.locals.user.id;
-    const index: number = parseInt(req.params.index);
-    const item: ItemDto = req.body;
-
-    const [error, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
+    const [error, updatedProductDto] = await catchPromiseError(
+      productsService.updateProductItem(
+        req.params.ean,
+        res.locals.user.id,
+        parseInt(req.params.index),
+        req.body
+      )
     );
     if (error) return next(error);
 
-    const items = product.items;
-
-    items[index] = item;
-
-    items.sort(
-      (a, b) =>
-        new Date(a.expiration_date).getTime() -
-        new Date(b.expiration_date).getTime()
-    );
-
-    const [dbError] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, { items })
-    );
-    if (dbError) return next(dbError);
-
     const responseBody: ResponseDto<ProductDto> = {
       message: "Item updated successfully",
-      data: {
-        ean: product.ean,
-        user_id: product.user_id.toString(),
-        name: product.name,
-        description: product.description,
-        items: product.items.map((item) => {
-          return { expiration_date: item.expiration_date } as ItemDto;
-        }),
-      },
+      data: updatedProductDto,
     };
 
     res.status(200).json(responseBody);
@@ -397,23 +275,14 @@ productsRoutes.delete(
       if (validationError) return next(validationError);
     }
 
-    const ean: string = req.params.ean;
-    const userId: string = res.locals.user.id;
-    const index: number = parseInt(req.params.index);
-
-    const [error, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
+    const [error] = await catchPromiseError(
+      productsService.deleteProductItem(
+        req.params.ean,
+        res.locals.user.id,
+        parseInt(req.params.index)
+      )
     );
     if (error) return next(error);
-
-    const items = product.items;
-
-    items.splice(index, 1);
-
-    const [dbError] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, { items })
-    );
-    if (dbError) return next(dbError);
 
     const responseBody: ResponseDto<null> = {
       message: "Item deleted successfully",
