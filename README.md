@@ -3,13 +3,21 @@ The backend for a simple supply management system. You can create products with 
 ## Why this project?
 
 I am creating this project for my father, who is developing a supply management system to manage our supplies.
-This application will make it possible to manage users and save the data online.
+This application will make it possible to save the data online and manage users.
+It will function as the part of the projects that contains the logic not directly seen by the user and take the load of the client.
+
+## What I learned so far?
+
+- I learned that a crucial part of developing a application isn´t just programming, but designing and planning the a. o. API endpoints and desired behavior of the application.
+- I learned that testing is a necessary and very useful step in developing a feature. I beleve that - after I got the hang of the test framework - the testing saved more time than writing the tests.
 
 ## What is used?
 
 Routes / Middleware: Express Js
 
 Types: typescript
+
+Testing: jest
 
 Database: MongoDB / mongoose
 
@@ -66,6 +74,7 @@ Now you can access the products by adding the token in the header:
 - Swagger documentation
 - Check if using refreshTokens is necessery / sensible
 - Implement logging
+- Implement a CI/CD pipeline using Github Actions
 
 ## How to use the application locally?
 
