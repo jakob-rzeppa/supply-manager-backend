@@ -44,11 +44,14 @@ usersRoutes.post(
 
     // TODO Send email to verify user
 
-    const accessToken = generateAccessToken({
-      name: user.name,
-      id: user._id.toString(),
-      email: user.email,
-    });
+    const [tokenError, accessToken] = await catchPromiseError(
+      generateAccessToken({
+        name: user.name,
+        id: user._id.toString(),
+        email: user.email,
+      })
+    );
+    if (tokenError) return next(tokenError);
 
     res.status(200).json({ accessToken });
   }
