@@ -1,6 +1,4 @@
-# Supply-Manager-Backend
-
-This is the backend for a simple supply management system. You can create products with a EAN (European Article Number) and change the amount of the product (with expiration dates).
+The backend for a simple supply management system. You can create products with a EAN (European Article Number) and change the amount of the product (with expiration dates).
 
 ## Why this project?
 
