@@ -126,9 +126,9 @@ describe("authDatabase", () => {
         .spyOn(AccessTokenModel, "deleteOne")
         .mockResolvedValueOnce({ deletedCount: 1 } as any);
 
-      await authDatabase.deleteAccessToken(mockId);
+      await authDatabase.deleteAccessToken("token");
 
-      expect(deleteOneMock).toHaveBeenCalledWith({ _id: mockId });
+      expect(deleteOneMock).toHaveBeenCalledWith({ token: "token" });
     });
   });
 });

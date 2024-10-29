@@ -15,6 +15,7 @@ export default {
 
     const productDtos: ProductDto[] = products.map((product) => {
       return {
+        id: product._id.toString(),
         ean: product.ean,
         user_id: product.user_id.toString(),
         name: product.name,
@@ -28,16 +29,17 @@ export default {
     return productDtos;
   },
 
-  getProductByEanAndUserId: async (
-    ean: string,
+  getProductByIdAndUserId: async (
+    id: string,
     userId: string
   ): Promise<ProductDto> => {
     const [dbError, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
+      database.products.getProductById(id, userId)
     );
     if (dbError) throw dbError;
 
     const productDtos: ProductDto = {
+      id: product._id.toString(),
       ean: product.ean,
       user_id: product.user_id.toString(),
       name: product.name,
@@ -65,31 +67,21 @@ export default {
     );
     if (dbError) throw dbError;
 
-    const productDto: ProductDto = {
-      ean: newProduct.ean,
-      user_id: newProduct.user_id.toString(),
-      name: newProduct.name,
-      description: newProduct.description,
-      items: newProduct.items,
-    };
-
-    return productDto;
+    return newProduct._id.toString();
   },
 
   updateProduct: async (
-    ean: string,
+    id: string,
     userId: string,
     productInfoToUpdate: Partial<Omit<ProductDto, "id" | "items" | "user_id">>
   ) => {
     const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, {
-        name: productInfoToUpdate.name,
-        description: productInfoToUpdate.description,
-      })
+      database.products.updateProduct(id, userId, productInfoToUpdate)
     );
     if (dbError) throw dbError;
 
     const productDto: ProductDto = {
+      id: updatedProduct._id.toString(),
       ean: updatedProduct.ean,
       user_id: updatedProduct.user_id.toString(),
       name: updatedProduct.name,
@@ -100,16 +92,16 @@ export default {
     return productDto;
   },
 
-  deleteProductByEan: async (ean: string, userId: string) => {
+  deleteProductByid: async (id: string, userId: string) => {
     const [error] = await catchPromiseError(
-      database.products.deleteProductByEan(ean, userId)
+      database.products.deleteProductById(id, userId)
     );
     if (error) throw error;
   },
 
-  addProductItem: async (ean: string, userId: string, item: ItemDto) => {
+  addProductItem: async (id: string, userId: string, item: ItemDto) => {
     const [error, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
+      database.products.getProductById(id, userId)
     );
     if (error) throw error;
 
@@ -124,29 +116,21 @@ export default {
     );
 
     const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, { items })
+      database.products.updateProduct(id, userId, { items })
     );
     if (dbError) throw dbError;
 
-    return {
-      ean: updatedProduct.ean,
-      user_id: updatedProduct.user_id.toString(),
-      name: updatedProduct.name,
-      description: updatedProduct.description,
-      items: updatedProduct.items.map((item) => {
-        return { expiration_date: item.expiration_date } as ItemDto;
-      }),
-    } as ProductDto;
+    return updatedProduct.items as ItemDto[];
   },
 
   updateProductItem: async (
-    ean: string,
+    id: string,
     userId: string,
     index: number,
     item: ItemDto
   ) => {
     const [error, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
+      database.products.getProductById(id, userId)
     );
     if (error) throw error;
 
@@ -160,25 +144,17 @@ export default {
         new Date(b.expiration_date).getTime()
     );
 
-    const [dbError] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, { items })
+    const [dbError, updatedProduct] = await catchPromiseError(
+      database.products.updateProduct(id, userId, { items })
     );
     if (dbError) throw dbError;
 
-    return {
-      ean: product.ean,
-      user_id: product.user_id.toString(),
-      name: product.name,
-      description: product.description,
-      items: product.items.map((item) => {
-        return { expiration_date: item.expiration_date } as ItemDto;
-      }),
-    } as ProductDto;
+    return updatedProduct.items as ItemDto[];
   },
 
-  deleteProductItem: async (ean: string, userId: string, index: number) => {
+  deleteProductItem: async (id: string, userId: string, index: number) => {
     const [error, product] = await catchPromiseError(
-      database.products.getProductByEan(ean, userId)
+      database.products.getProductById(id, userId)
     );
     if (error) throw error;
 
@@ -187,7 +163,7 @@ export default {
     items.splice(index, 1);
 
     const [dbError] = await catchPromiseError(
-      database.products.updateProduct(ean, userId, { items })
+      database.products.updateProduct(id, userId, { items })
     );
     if (dbError) throw dbError;
   },
