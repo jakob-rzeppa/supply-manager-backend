@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import authMiddleware from "../../auth/authMiddleware";
+import authMiddleware from "../../middlewares/authMiddleware";
 import AuthenticationError from "../../errors/auth/authenticationError";
 import AuthorisationError from "../../errors/auth/authorisationError";
 import jwt from "jsonwebtoken";

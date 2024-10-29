@@ -1,11 +1,10 @@
 import { NextFunction, Request, Response, Router } from "express";
-import validateRequest from "../validation/requestValidation";
 import Joi from "joi";
+
+import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
-import authDatabase from "../database/auth/authDatabase";
-import { generateAccessToken } from "./authTokens";
-import bcrypt from "bcrypt";
 import UserDto from "../dtos/user.dto";
+import usersService from "../services/usersService";
 
 const usersRoutes = Router();
 
@@ -25,30 +24,10 @@ usersRoutes.post(
     const email: string = req.body.email;
     const password: string = req.body.password;
 
-    // Check if user already exists
-    const userExistsError = await authDatabase.isUserExisting({ email, name });
-    if (userExistsError) return next(userExistsError);
-
-    // hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const [userError, user] = await catchPromiseError(
-      authDatabase.createUser({
-        email,
-        password: hashedPassword,
-        name,
-        isVerified: false,
-      })
+    const [error, accessToken] = await catchPromiseError(
+      usersService.createUser(name, email, password)
     );
-    if (userError) return next(userError);
-
-    // TODO Send email to verify user
-
-    const accessToken = generateAccessToken({
-      name: user.name,
-      id: user._id.toString(),
-      email: user.email,
-    });
+    if (error) return next(error);
 
     res.status(200).json({ accessToken });
   }
@@ -69,10 +48,10 @@ usersRoutes.put(
     const id: string = req.params.id;
     const body: Partial<Omit<UserDto, "password" | "id">> = req.body;
 
-    const [userError, user] = await catchPromiseError(
-      authDatabase.updateUser(id, body)
+    const [error, user] = await catchPromiseError(
+      usersService.updateUser(id, body)
     );
-    if (userError) return next(userError);
+    if (error) return next(error);
 
     res.status(200).json(user);
   }

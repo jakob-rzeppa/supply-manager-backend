@@ -14,7 +14,7 @@ export const UserModel = mongoose.model<User>("User", userSchema);
 
 const accessTokenSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, required: true },
-  refresh_token: { type: String, required: true },
+  token: { type: String, required: true },
 });
 
 export const AccessTokenModel = mongoose.model<AccessToken>(

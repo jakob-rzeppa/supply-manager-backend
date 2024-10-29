@@ -2,7 +2,6 @@ import NotFoundError from "../../errors/db/notFoundError";
 import { AccessToken, User } from "./authDatabase.types";
 import { AccessTokenModel, UserModel } from "./authDatabase.models";
 import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
-import { get } from "mongoose";
 
 const authDatabase = {
   isUserExisting: async (user: {
@@ -85,8 +84,8 @@ const authDatabase = {
     return await newAccessToken.save();
   },
 
-  deleteAccessToken: async (id: string): Promise<void> => {
-    const deleteResponse = await AccessTokenModel.deleteOne({ _id: id });
+  deleteAccessToken: async (token: string): Promise<void> => {
+    const deleteResponse = await AccessTokenModel.deleteOne({ token });
     if (deleteResponse.deletedCount === 0) {
       throw new NotFoundError("Access token not found");
     }
