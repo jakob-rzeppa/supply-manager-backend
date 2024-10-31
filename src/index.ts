@@ -1,10 +1,11 @@
 import express, { Request, Response } from "express";
 
-import productsRoutes from "./routes/products.routes";
+import productsRoutes from "./routes/productsRoutes";
 import globalErrorHandlerMiddleware from "./middlewares/globalErrorHandlerMiddleware";
 import authRoutes from "./routes/authRoutes";
 import database from "./database/database";
 import { env } from "./config/env";
+import authMiddleware from "./middlewares/authMiddleware";
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.get("/", (_req: Request, res: Response) => {
   res.send("Supply-Manager-Backend");
 });
 
-app.use("/products", productsRoutes);
+app.use("/products", authMiddleware, productsRoutes);
 
 app.use("/auth", authRoutes);
 

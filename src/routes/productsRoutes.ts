@@ -12,12 +12,9 @@ import {
 } from "../validation/productValidationSchemas";
 import validateLocals from "../validation/localsValidation";
 import { userSchema } from "../validation/userValidationSchemas";
-import authMiddleware from "../middlewares/authMiddleware";
 import productsService from "../services/productsService";
 
 const productsRoutes = Router();
-
-productsRoutes.use(authMiddleware);
 
 productsRoutes.get(
   "",
@@ -243,7 +240,7 @@ productsRoutes.delete(
     );
     if (error) return next(error);
 
-    res.status(204);
+    res.sendStatus(204);
   }
 );
 
