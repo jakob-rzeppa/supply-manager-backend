@@ -2,6 +2,7 @@ import { Request } from "express";
 import ValidationError from "../errors/validation/validationError";
 import Joi from "joi";
 import { ParsedQs } from "qs";
+import RequestValidationError from "../errors/validation/requestValidationError";
 
 export function validateParams(
   reqParams: {
@@ -92,7 +93,7 @@ export default function validateRequest(
   ];
 
   if (errorMessages.length > 0) {
-    return new ValidationError(
+    return new RequestValidationError(
       "Request validation failed: " + errorMessages.join(", ")
     );
   }
