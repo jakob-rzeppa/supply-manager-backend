@@ -12,6 +12,10 @@ export default class RuntimeError extends Error {
     this.responseStatus = responseStatus;
   }
 
+  getResponseStatus() {
+    return this.responseStatus;
+  }
+
   sendResponse(res: Response) {
     return res.status(this.responseStatus).json({ error: this.message });
   }

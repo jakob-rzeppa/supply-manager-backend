@@ -4,7 +4,9 @@ export interface Item {
   expiration_date: Date;
 }
 export interface Product {
-  ean: string;
+  _id: mongoose.Types.ObjectId;
+
+  ean: string | undefined;
   user_id: mongoose.Types.ObjectId;
 
   name: string;

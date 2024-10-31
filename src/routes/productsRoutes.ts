@@ -1,28 +1,24 @@
 import { Router, Request, Response, NextFunction } from "express";
 import Joi from "joi";
 
-import ResponseDto from "../dtos/response.dto";
-import ProductDto from "../dtos/product.dto";
 import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import {
   createItemBodySchema,
   createProductBodySchema,
   eanSchema,
+  idSchema,
   updateProductBodySchema,
 } from "../validation/productValidationSchemas";
 import validateLocals from "../validation/localsValidation";
 import { userSchema } from "../validation/userValidationSchemas";
-import authMiddleware from "../middlewares/authMiddleware";
 import productsService from "../services/productsService";
 
 const productsRoutes = Router();
 
-productsRoutes.use(authMiddleware);
-
 productsRoutes.get(
   "",
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (_req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateLocals(
         res,
@@ -36,21 +32,16 @@ productsRoutes.get(
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<ProductDto[]> = {
-      message: "Products retrieved successfully",
-      data: productDtos,
-    };
-
-    res.status(200).json(responseBody);
+    res.status(200).json({ products: productDtos });
   }
 );
 
 productsRoutes.get(
-  "/:ean",
+  "/:id",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["ean", eanSchema]]),
+        params: new Map([["id", idSchema]]),
       });
       if (validationError) return next(validationError);
     }
@@ -64,19 +55,11 @@ productsRoutes.get(
     }
 
     const [error, productDto] = await catchPromiseError(
-      productsService.getProductByEanAndUserId(
-        req.params.ean,
-        res.locals.user.id
-      )
+      productsService.getProductByIdAndUserId(req.params.id, res.locals.user.id)
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Product retrieved successfully",
-      data: productDto,
-    };
-
-    res.status(200).json(responseBody);
+    res.status(200).json(productDto);
   }
 );
 
@@ -98,26 +81,21 @@ productsRoutes.post(
       if (validationError) return next(validationError);
     }
 
-    const [error, productDto] = await catchPromiseError(
+    const [error, productId] = await catchPromiseError(
       productsService.createProduct(res.locals.user.id, req.body)
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Product created succesfully",
-      data: productDto,
-    };
-
-    res.status(201).json(responseBody);
+    res.status(201).json({ id: productId });
   }
 );
 
 productsRoutes.put(
-  "/:ean",
+  "/:id",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["ean", eanSchema]]),
+        params: new Map([["id", eanSchema]]),
         body: updateProductBodySchema,
       });
       if (validationError) return next(validationError);
@@ -132,29 +110,20 @@ productsRoutes.put(
     }
 
     const [error, productDto] = await catchPromiseError(
-      productsService.updateProduct(
-        req.params.ean,
-        res.locals.user.id,
-        req.body
-      )
+      productsService.updateProduct(req.params.id, res.locals.user.id, req.body)
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Product updated successfully",
-      data: productDto,
-    };
-
-    res.status(200).json(responseBody);
+    res.status(200).json(productDto);
   }
 );
 
 productsRoutes.delete(
-  "/:ean",
+  "/:id",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["ean", eanSchema]]),
+        params: new Map([["id", idSchema]]),
       });
       if (validationError) return next(validationError);
     }
@@ -168,23 +137,20 @@ productsRoutes.delete(
     }
 
     const [error] = await catchPromiseError(
-      productsService.deleteProductByEan(req.params.ean, res.locals.user.id)
+      productsService.deleteProductByid(req.params.id, res.locals.user.id)
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<null> = {
-      message: "Product deleted successfully",
-    };
-    res.status(200).json(responseBody);
+    res.sendStatus(204);
   }
 );
 
 productsRoutes.post(
-  "/:ean/items",
+  "/:id/items",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["ean", eanSchema]]),
+        params: new Map([["id", idSchema]]),
         body: createItemBodySchema,
       });
       if (validationError) return next(validationError);
@@ -197,31 +163,26 @@ productsRoutes.post(
       if (validationError) return next(validationError);
     }
 
-    const [error, productDto] = await catchPromiseError(
+    const [error, updatedItems] = await catchPromiseError(
       productsService.addProductItem(
-        req.params.ean,
+        req.params.id,
         res.locals.user.id,
         req.body
       )
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Item added successfully",
-      data: productDto,
-    };
-
-    res.status(200).json(responseBody);
+    res.status(200).json({ items: updatedItems });
   }
 );
 
 productsRoutes.put(
-  "/:ean/items/:index",
+  "/:id/items/:index",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
         params: new Map([
-          ["ean", eanSchema],
+          ["id", idSchema],
           ["index", Joi.string().regex(/^\d+$/).required()],
         ]),
         body: createItemBodySchema,
@@ -236,9 +197,9 @@ productsRoutes.put(
       if (validationError) return next(validationError);
     }
 
-    const [error, updatedProductDto] = await catchPromiseError(
+    const [error, updatedItems] = await catchPromiseError(
       productsService.updateProductItem(
-        req.params.ean,
+        req.params.id,
         res.locals.user.id,
         parseInt(req.params.index),
         req.body
@@ -246,22 +207,17 @@ productsRoutes.put(
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<ProductDto> = {
-      message: "Item updated successfully",
-      data: updatedProductDto,
-    };
-
-    res.status(200).json(responseBody);
+    res.status(200).json(updatedItems);
   }
 );
 
 productsRoutes.delete(
-  "/:ean/items/:index",
+  "/:id/items/:index",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
         params: new Map([
-          ["ean", eanSchema],
+          ["id", idSchema],
           ["index", Joi.string().regex(/^\d+$/).required()],
         ]),
       });
@@ -277,18 +233,14 @@ productsRoutes.delete(
 
     const [error] = await catchPromiseError(
       productsService.deleteProductItem(
-        req.params.ean,
+        req.params.id,
         res.locals.user.id,
         parseInt(req.params.index)
       )
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<null> = {
-      message: "Item deleted successfully",
-    };
-
-    res.status(200).json(responseBody);
+    res.sendStatus(204);
   }
 );
 

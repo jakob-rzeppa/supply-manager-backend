@@ -5,7 +5,6 @@ import {
 import { User } from "../../database/auth/authDatabase.types";
 import mongoose from "mongoose";
 import authDatabase from "../../database/auth/authDatabase";
-import NotFoundError from "../../errors/db/notFoundError";
 import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
 
 const mockId = "ffffffffffffffffffffffff";
@@ -19,6 +18,83 @@ const mockUser: User = {
 };
 
 describe("authDatabase", () => {
+  describe("isUserExisting", () => {
+    it("should return a ResourceAlreadyExistsError if the email already exists", async () => {
+      const mock = jest
+        .spyOn(UserModel, "exists")
+        .mockResolvedValue({
+          _id: new mongoose.Types.ObjectId("ffffffffffffffffffffffff"),
+        });
+
+      const error = await authDatabase.isUserExisting({
+        email: mockUser.email,
+        name: undefined,
+      });
+
+      expect(error).toEqual(
+        new ResourceAlreadyExistsError("Email already exists")
+      );
+      expect(mock).toHaveBeenCalledWith({ email: mockUser.email });
+    });
+
+    it("should return a ResourceAlreadyExistsError if the name already exists", async () => {
+      const mock = jest.spyOn(UserModel, "exists").mockResolvedValue({
+        _id: new mongoose.Types.ObjectId("ffffffffffffffffffffffff"),
+      });
+
+      const error = await authDatabase.isUserExisting({
+        email: undefined,
+        name: mockUser.name,
+      });
+
+      expect(error).toEqual(
+        new ResourceAlreadyExistsError("Username already exists")
+      );
+      expect(mock).toHaveBeenCalledWith({ email: undefined });
+    });
+
+    it("should return undefined if the email and name do not exist", async () => {
+      jest.spyOn(UserModel, "exists").mockResolvedValue(null);
+
+      const error = await authDatabase.isUserExisting({
+        email: mockUser.email,
+        name: mockUser.name,
+      });
+
+      expect(error).toBeUndefined();
+    });
+
+    it("should return undefined if the email and name are undefined", async () => {
+      const error = await authDatabase.isUserExisting({
+        email: undefined,
+        name: undefined,
+      });
+
+      expect(error).toBeUndefined();
+    });
+  });
+
+  describe("getUserByEmail", () => {
+    it("should call UserModel.findOne with the correct email and return a user", async () => {
+      const mock = jest
+        .spyOn(UserModel, "findOne")
+        .mockResolvedValueOnce(mockUser);
+      const user = await authDatabase.getUserByEmail(mockUser.email);
+
+      expect(user).toEqual(mockUser);
+      expect(mock).toHaveBeenCalledWith({ email: mockUser.email });
+    });
+
+    it("should throw a NotFoundError if UserModel.findOne returns null", async () => {
+      const mock = jest.spyOn(UserModel, "findOne").mockResolvedValueOnce(null);
+
+      await expect(authDatabase.getUserByEmail(mockUser.email)).rejects.toThrow(
+        "User not found"
+      );
+      expect(mock).toHaveBeenCalledWith({ email: mockUser.email });
+    });
+  });
+
   describe("getUserById", () => {
     it("should call UserModel.findById with the correct id and return a user", async () => {
       const mock = jest
@@ -59,10 +135,16 @@ describe("authDatabase", () => {
     it("should call UserModel.deleteOne with the correct id and delete the user", async () => {
       const deleteOneMock = jest
         .spyOn(UserModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
+        .mockResolvedValueOnce({ deletedCount: 1 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
       const deleteManyMock = jest
         .spyOn(AccessTokenModel, "deleteMany")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
+        .mockResolvedValueOnce({ deletedCount: 1 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
 
       await authDatabase.deleteUser(mockId);
 
@@ -73,12 +155,76 @@ describe("authDatabase", () => {
     it("should throw a NotFoundError if UserModel.deleteOne returns 0", async () => {
       const mock = jest
         .spyOn(UserModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 0 } as any);
+        .mockResolvedValueOnce({ deletedCount: 0 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
 
       await expect(authDatabase.deleteUser(mockId)).rejects.toThrow(
         "User not found"
       );
       expect(mock).toHaveBeenCalledWith({ _id: mockId });
+    });
+  });
+
+  describe("updateUser", () => {
+    it("should throw a NotFoundError if UserModel.findById returns null", async () => {
+      const mock = jest
+        .spyOn(UserModel, "findById")
+        .mockResolvedValueOnce(null);
+
+      await expect(
+        authDatabase.updateUser(mockId, { email: "newEmail" })
+      ).rejects.toThrow("User not found");
+
+      expect(mock).toHaveBeenCalledWith(mockId);
+    });
+
+    it("should throw a ResourceAlreadyExistsError if the user already exists", async () => {
+      const mock = jest
+        .spyOn(UserModel, "findById")
+        .mockResolvedValueOnce(mockUser);
+      jest
+        .spyOn(authDatabase, "isUserExisting")
+        .mockResolvedValueOnce(
+          new ResourceAlreadyExistsError("Email already exists")
+        );
+
+      await expect(
+        authDatabase.updateUser(mockId, { email: "newEmail", name: "newName" })
+      ).rejects.toThrow(new ResourceAlreadyExistsError("Email already exists"));
+
+      expect(mock).toHaveBeenCalledWith(mockId);
+    });
+
+    it("should update the user and return it", async () => {
+      const userModelMock = new UserModel(mockUser);
+      const mock = jest
+        .spyOn(UserModel, "findById")
+        .mockResolvedValueOnce(userModelMock);
+      const mockIsUserExisting = jest
+        .spyOn(authDatabase, "isUserExisting")
+        .mockResolvedValueOnce(undefined);
+      jest.spyOn(userModelMock, "save").mockResolvedValueOnce(userModelMock);
+
+      const updatedUser = await authDatabase.updateUser(mockId, {
+        email: "newEmail",
+        name: "newName",
+        password: "newPassword",
+        isVerified: true,
+      });
+
+      expect(updatedUser.email).toEqual("newEmail");
+      expect(updatedUser.name).toEqual("newName");
+      expect(updatedUser.password).toEqual("newPassword");
+      expect(updatedUser.isVerified).toEqual(true);
+
+      expect(mock).toHaveBeenCalledWith(mockId);
+      expect(mockIsUserExisting).toHaveBeenCalledWith({
+        email: "newEmail",
+        name: "newName",
+      });
+      expect(userModelMock.save).toHaveBeenCalled();
     });
   });
 
@@ -124,11 +270,28 @@ describe("authDatabase", () => {
     it("should call AccessTokenModel.deleteOne with the correct id and delete the access token", async () => {
       const deleteOneMock = jest
         .spyOn(AccessTokenModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
+        .mockResolvedValueOnce({ deletedCount: 1 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
 
-      await authDatabase.deleteAccessToken(mockId);
+      await authDatabase.deleteAccessToken("token");
 
-      expect(deleteOneMock).toHaveBeenCalledWith({ _id: mockId });
+      expect(deleteOneMock).toHaveBeenCalledWith({ token: "token" });
+    });
+
+    it("should throw a NotFoundError if AccessTokenModel.deleteOne returns 0", async () => {
+      const mock = jest
+        .spyOn(AccessTokenModel, "deleteOne")
+        .mockResolvedValueOnce({ deletedCount: 0 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
+
+      await expect(authDatabase.deleteAccessToken("token")).rejects.toThrow(
+        "Access token not found"
+      );
+      expect(mock).toHaveBeenCalledWith({ token: "token" });
     });
   });
 });

@@ -7,7 +7,7 @@ import { env } from "../../config/env";
 
 describe("authMiddleware", () => {
   it("should call next with an error if no token is provided", () => {
-    const req = { headers: {} } as any as Request;
+    const req = { headers: {} } as unknown as Request;
     const res = {} as Response;
     const next = jest.fn() as NextFunction;
     authMiddleware(req, res, next);
@@ -19,7 +19,7 @@ describe("authMiddleware", () => {
   it("should call next with an error if the token is invalid", () => {
     const req = {
       headers: { authorization: "bearer invalidAuthToken" },
-    } as any as Request;
+    } as unknown as Request;
     const res = {} as Response;
     const next = jest.fn() as NextFunction;
     authMiddleware(req, res, next);
@@ -33,7 +33,7 @@ describe("authMiddleware", () => {
     const token = jwt.sign(user, env.ACCESS_TOKEN_SECRET);
     const req = {
       headers: { authorization: `bearer ${token}` },
-    } as any as Request;
+    } as unknown as Request;
     const res = { locals: {} } as Response;
     const next = jest.fn() as NextFunction;
     authMiddleware(req, res, next);

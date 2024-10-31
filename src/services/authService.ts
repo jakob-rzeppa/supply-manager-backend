@@ -6,7 +6,7 @@ import { generateAccessToken } from "../utilityFunctions/authTokens";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 
 export default {
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string): Promise<string> => {
     const [userError, user] = await catchPromiseError(
       authDatabase.getUserByEmail(email)
     );

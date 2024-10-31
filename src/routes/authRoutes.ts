@@ -15,12 +15,13 @@ authRoutes.use("/users", usersRoutes);
 authRoutes.post(
   "/login",
   async (req: Request, res: Response, next: NextFunction) => {
-    validateRequest(req, {
+    const validationError = validateRequest(req, {
       body: Joi.object({
         email: Joi.string().email().required(),
         password: Joi.string().required(),
       }),
     });
+    if (validationError) return next(validationError);
 
     const email: string = req.body.email;
     const password: string = req.body.password;
@@ -42,11 +43,12 @@ authRoutes.post(
 authRoutes.delete(
   "/logout",
   async (req: Request, res: Response, next: NextFunction) => {
-    validateRequest(req, {
+    const validationError = validateRequest(req, {
       body: Joi.object({
         token: Joi.string().required(),
       }),
     });
+    if (validationError) return next(validationError);
 
     const token: string = req.body.token;
 

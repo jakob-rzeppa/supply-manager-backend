@@ -49,7 +49,7 @@ const authDatabase = {
     const user = await UserModel.findById(id);
     if (!user) throw new NotFoundError("User not found");
 
-    const isExistingError = authDatabase.isUserExisting({
+    const isExistingError = await authDatabase.isUserExisting({
       email: updateUserObject.email,
       name: updateUserObject.name,
     });
