@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request } from "express";
 import ValidationError from "../errors/validation/validationError";
 import Joi from "joi";
 import { ParsedQs } from "qs";
@@ -63,7 +63,7 @@ export function validateHeaders(
   return errorMessages;
 }
 
-export function validateBody(reqBody: Object, expectedBody?: Joi.ObjectSchema) {
+export function validateBody(reqBody: object, expectedBody?: Joi.ObjectSchema) {
   if (!expectedBody) {
     return [];
   }

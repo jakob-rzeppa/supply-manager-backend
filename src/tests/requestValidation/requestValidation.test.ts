@@ -18,11 +18,11 @@ describe("Request Validation", () => {
 
     it("should return error messages for invalid params", () => {
       const schema = new Map<string, Joi.StringSchema>();
-      schema.set("param1", Joi.string().required());
+      schema.set("param1", Joi.string().required().length(13));
 
-      const result = validateParams({ param1: 123 as any }, schema);
+      const result = validateParams({ param1: "123" }, schema);
       expect(result).toEqual([
-        'Param param1 not as expected ("value" must be a string)',
+        'Param param1 not as expected ("value" length must be 13 characters long)',
       ]);
     });
 
@@ -53,11 +53,11 @@ describe("Request Validation", () => {
 
     it("should return error messages for invalid queries", () => {
       const schema = new Map<string, Joi.StringSchema>();
-      schema.set("query1", Joi.string().required());
+      schema.set("query1", Joi.string().required().length(13));
 
-      const result = validateQuerys({ query1: 123 as any }, schema);
+      const result = validateQuerys({ query1: "123" }, schema);
       expect(result).toEqual([
-        'Query query1 not as expected ("value" must be a string)',
+        'Query query1 not as expected ("value" length must be 13 characters long)',
       ]);
     });
 
@@ -88,11 +88,11 @@ describe("Request Validation", () => {
 
     it("should return error messages for invalid headers", () => {
       const schema = new Map<string, Joi.StringSchema>();
-      schema.set("header1", Joi.string().required());
+      schema.set("header1", Joi.string().required().length(13));
 
-      const result = validateHeaders({ header1: 123 as any }, schema);
+      const result = validateHeaders({ header1: "123" }, schema);
       expect(result).toEqual([
-        'Header header1 not as expected ("value" must be a string)',
+        'Header header1 not as expected ("value" length must be 13 characters long)',
       ]);
     });
 
@@ -123,12 +123,12 @@ describe("Request Validation", () => {
 
     it("should return error message for invalid body", () => {
       const schema = Joi.object({
-        key: Joi.string().required(),
+        key: Joi.string().required().length(13),
       });
 
-      const result = validateBody({ key: 123 }, schema);
+      const result = validateBody({ key: "123" }, schema);
       expect(result).toEqual([
-        'Request Body not as expected ("key" must be a string)',
+        'Request Body not as expected ("key" length must be 13 characters long)',
       ]);
     });
 

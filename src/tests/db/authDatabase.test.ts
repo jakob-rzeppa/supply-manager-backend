@@ -22,7 +22,9 @@ describe("authDatabase", () => {
     it("should return a ResourceAlreadyExistsError if the email already exists", async () => {
       const mock = jest
         .spyOn(UserModel, "exists")
-        .mockResolvedValue(true as any);
+        .mockResolvedValue({
+          _id: new mongoose.Types.ObjectId("ffffffffffffffffffffffff"),
+        });
 
       const error = await authDatabase.isUserExisting({
         email: mockUser.email,
@@ -36,9 +38,9 @@ describe("authDatabase", () => {
     });
 
     it("should return a ResourceAlreadyExistsError if the name already exists", async () => {
-      const mock = jest
-        .spyOn(UserModel, "exists")
-        .mockResolvedValue(true as any);
+      const mock = jest.spyOn(UserModel, "exists").mockResolvedValue({
+        _id: new mongoose.Types.ObjectId("ffffffffffffffffffffffff"),
+      });
 
       const error = await authDatabase.isUserExisting({
         email: undefined,
@@ -52,9 +54,7 @@ describe("authDatabase", () => {
     });
 
     it("should return undefined if the email and name do not exist", async () => {
-      const mock = jest
-        .spyOn(UserModel, "exists")
-        .mockResolvedValue(false as any);
+      jest.spyOn(UserModel, "exists").mockResolvedValue(null);
 
       const error = await authDatabase.isUserExisting({
         email: mockUser.email,
@@ -135,10 +135,16 @@ describe("authDatabase", () => {
     it("should call UserModel.deleteOne with the correct id and delete the user", async () => {
       const deleteOneMock = jest
         .spyOn(UserModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
+        .mockResolvedValueOnce({ deletedCount: 1 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
       const deleteManyMock = jest
         .spyOn(AccessTokenModel, "deleteMany")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
+        .mockResolvedValueOnce({ deletedCount: 1 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
 
       await authDatabase.deleteUser(mockId);
 
@@ -149,7 +155,10 @@ describe("authDatabase", () => {
     it("should throw a NotFoundError if UserModel.deleteOne returns 0", async () => {
       const mock = jest
         .spyOn(UserModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 0 } as any);
+        .mockResolvedValueOnce({ deletedCount: 0 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
 
       await expect(authDatabase.deleteUser(mockId)).rejects.toThrow(
         "User not found"
@@ -261,7 +270,10 @@ describe("authDatabase", () => {
     it("should call AccessTokenModel.deleteOne with the correct id and delete the access token", async () => {
       const deleteOneMock = jest
         .spyOn(AccessTokenModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 1 } as any);
+        .mockResolvedValueOnce({ deletedCount: 1 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
 
       await authDatabase.deleteAccessToken("token");
 
@@ -271,7 +283,10 @@ describe("authDatabase", () => {
     it("should throw a NotFoundError if AccessTokenModel.deleteOne returns 0", async () => {
       const mock = jest
         .spyOn(AccessTokenModel, "deleteOne")
-        .mockResolvedValueOnce({ deletedCount: 0 } as any);
+        .mockResolvedValueOnce({ deletedCount: 0 } as {
+          acknowledged: boolean;
+          deletedCount: number;
+        });
 
       await expect(authDatabase.deleteAccessToken("token")).rejects.toThrow(
         "Access token not found"

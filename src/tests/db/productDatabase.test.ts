@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import { ProductModel } from "../../database/product/productDatabase.models";
 import { Product } from "../../database/product/productDatabase.types";
 import productDatabase from "../../database/product/productDatabase";
-import e from "express";
 
 const testProduct: Product = {
   _id: new mongoose.Types.ObjectId("123456789012345678901234"),
@@ -215,7 +214,10 @@ describe("Product Database", () => {
       it("should delete product", async () => {
         const deleteOneMock = jest
           .spyOn(ProductModel, "deleteOne")
-          .mockResolvedValue({ deletedCount: 1 } as any);
+          .mockResolvedValue({ deletedCount: 1 } as {
+            acknowledged: boolean;
+            deletedCount: number;
+          });
 
         await productDatabase.deleteProductById(
           testProduct._id.toString(),
@@ -231,7 +233,10 @@ describe("Product Database", () => {
       it("should throw NotFoundError if product does not exist", async () => {
         const deleteOneMock = jest
           .spyOn(ProductModel, "deleteOne")
-          .mockResolvedValue({ deletedCount: 0 } as any);
+          .mockResolvedValue({ deletedCount: 0 } as {
+            acknowledged: boolean;
+            deletedCount: number;
+          });
 
         await expect(
           productDatabase.deleteProductById(
