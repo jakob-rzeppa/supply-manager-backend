@@ -12,7 +12,7 @@ authRoutes.use("/users", usersRoutes);
 
 /**
  * @swagger
- * /login:
+ * /auth/login:
  *   post:
  *     summary: User login
  *     description: Authenticates a user and returns an access token.
@@ -88,7 +88,7 @@ authRoutes.post(
 
 /**
  * @swagger
- * /logout:
+ * /auth/logout:
  *   delete:
  *     summary: User logout
  *     description: Logs out a user by deleting their access token.

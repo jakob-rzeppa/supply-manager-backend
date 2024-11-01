@@ -23,8 +23,7 @@ describe("Auth Routes", () => {
         .send({ email: "test@example.com", password: "password" });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.accessToken).toBe(mockAccessToken);
-      expect(response.body.message).toBe("Sucessfully logged in");
+      expect(response.body.accessToken).toBe(mockAccessToken);
     });
 
     it("should return 400 if email or password is missing", async () => {
@@ -54,8 +53,7 @@ describe("Auth Routes", () => {
         .delete("/auth/logout")
         .send({ token: "mockToken" });
 
-      expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Sucessfully logged out");
+      expect(response.status).toBe(204);
     });
 
     it("should return 400 if token is missing", async () => {

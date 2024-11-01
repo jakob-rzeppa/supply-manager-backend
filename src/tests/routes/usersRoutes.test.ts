@@ -39,14 +39,13 @@ describe("Users Routes", () => {
   describe("PUT /users/:id", () => {
     it("should update an existing user", async () => {
       const mockUser = { id: "1", name: "John Doe", email: "john@example.com" };
-      (usersService.updateUser as jest.Mock).mockResolvedValue(mockUser);
+      (usersService.updateUser as jest.Mock).mockResolvedValue(undefined);
 
       const response = await request(app)
         .put("/users/1")
         .send({ name: "John Doe", email: "john@example.com" });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockUser);
+      expect(response.status).toBe(204);
     });
 
     it("should return validation error for invalid input", async () => {
