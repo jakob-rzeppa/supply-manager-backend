@@ -46,7 +46,5 @@ export default {
       authDatabase.updateUser(id, body)
     );
     if (userError) throw userError;
-
-    return user;
   },
 };
