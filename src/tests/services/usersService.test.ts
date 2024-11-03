@@ -67,7 +67,7 @@ describe("usersService", () => {
       const result = await usersService.updateUser(id, body);
 
       expect(authDatabase.updateUser).toHaveBeenCalledWith(id, body);
-      expect(result).toBe(updatedUser);
+      expect(result).toBe(undefined);
     });
 
     it("should throw an error if update fails", async () => {

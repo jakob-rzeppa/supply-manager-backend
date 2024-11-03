@@ -1,17 +1,68 @@
 import { Router, Request, Response, NextFunction } from "express";
 import Joi from "joi";
-import "dotenv/config";
 
 import validateRequest from "../validation/requestValidation";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import usersRoutes from "./usersRoutes";
 import authService from "../services/authService";
-import ResponseDto from "../dtos/response.dto";
 
 const authRoutes = Router();
 
 authRoutes.use("/users", usersRoutes);
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticates a user and returns an access token.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@mail.com
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Successfully logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ */
 authRoutes.post(
   "/login",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -31,15 +82,43 @@ authRoutes.post(
     );
     if (error) return next(error);
 
-    const responseBody: ResponseDto<{ accessToken: string }> = {
-      data: { accessToken: accessToken },
-      message: "Sucessfully logged in",
-    };
-
-    res.status(200).json(responseBody);
+    res.status(200).json({ accessToken: accessToken });
   }
 );
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   delete:
+ *     summary: User logout
+ *     description: Logs out a user by deleting their access token.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+ *     responses:
+ *       204:
+ *         description: Successfully logged out
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ */
 authRoutes.delete(
   "/logout",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -55,9 +134,7 @@ authRoutes.delete(
     const [error] = await catchPromiseError(authService.logout(token));
     if (error) return next(error);
 
-    const responseBody: ResponseDto = { message: "Sucessfully logged out" };
-
-    res.status(200).json(responseBody);
+    res.sendStatus(204);
   }
 );
 
