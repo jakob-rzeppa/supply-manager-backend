@@ -78,6 +78,8 @@ const productsRoutes = Router();
  *   get:
  *     summary: Get all products for the authenticated user
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: A list of products
@@ -136,6 +138,8 @@ productsRoutes.get(
  *   get:
  *     summary: Get a product by ID for the authenticated user
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -208,6 +212,8 @@ productsRoutes.get(
  *   post:
  *     summary: Create a new product
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -295,6 +301,8 @@ productsRoutes.post(
  *   put:
  *     summary: Update a product by ID
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -396,6 +404,8 @@ productsRoutes.put(
  *   delete:
  *     summary: Delete a product by ID
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -464,6 +474,8 @@ productsRoutes.delete(
  *   post:
  *     summary: Add an item to a product
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -563,6 +575,8 @@ productsRoutes.post(
  *   put:
  *     summary: Update an item in a product
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -669,6 +683,8 @@ productsRoutes.put(
  *   delete:
  *     summary: Delete an item from a product
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

@@ -29,4 +29,5 @@ app.use(globalErrorHandlerMiddleware);
 
 app.listen(env.PORT, () => {
   console.log(`Server running at http://localhost:${env.PORT}`);
+  console.log(`Documentation at http://localhost:${env.PORT}/api-docs`);
 });
