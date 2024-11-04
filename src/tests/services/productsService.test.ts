@@ -216,23 +216,22 @@ describe("productsService", () => {
     });
   });
 
-  describe("updateProductItem", () => {
-    const updatedItem: ItemDto = { expiration_date: new Date(2026) };
-
-    it("should return an array of ItemDto", async () => {
+  describe("deleteProductItem", () => {
+    it("should delete an item from the product", async () => {
       jest
         .spyOn(database.products, "getProductById")
         .mockResolvedValue(product);
-      jest.spyOn(database.products, "updateProduct").mockResolvedValue(product);
+      jest
+        .spyOn(database.products, "updateProduct")
+        .mockResolvedValue({ ...product, items: [] });
 
-      const result = await productsService.updateProductItem(
+      const response = await productsService.deleteProductItem(
         productId,
         userId,
-        0,
-        updatedItem
+        item.expiration_date.toISOString()
       );
 
-      expect(result).toEqual([updatedItem]);
+      expect(response).toEqual([]);
     });
 
     it("should throw an error if the database call to getProductById fails", async () => {
@@ -241,7 +240,11 @@ describe("productsService", () => {
         .mockRejectedValue(new Error());
 
       await expect(
-        productsService.updateProductItem(productId, userId, 0, updatedItem)
+        productsService.deleteProductItem(
+          productId,
+          userId,
+          item.expiration_date.toISOString()
+        )
       ).rejects.toThrow();
     });
 
@@ -254,39 +257,25 @@ describe("productsService", () => {
         .mockRejectedValue(new Error());
 
       await expect(
-        productsService.updateProductItem(productId, userId, 0, updatedItem)
+        productsService.deleteProductItem(
+          productId,
+          userId,
+          item.expiration_date.toISOString()
+        )
       ).rejects.toThrow();
     });
 
-    it("should throw an error if the item index is out of bounds", async () => {
+    it("should throw an error if the item is not found", async () => {
       jest
         .spyOn(database.products, "getProductById")
         .mockResolvedValue(product);
 
       await expect(
-        productsService.updateProductItem(productId, userId, 1, updatedItem)
-      ).rejects.toThrow();
-    });
-  });
-
-  describe("deleteProductItem", () => {
-    it("should throw an error if the database call fails", async () => {
-      jest
-        .spyOn(database.products, "getProductById")
-        .mockRejectedValue(new Error());
-
-      await expect(
-        productsService.deleteProductItem(productId, userId, 0)
-      ).rejects.toThrow();
-    });
-
-    it("should throw an error if the item index is out of bounds", async () => {
-      jest
-        .spyOn(database.products, "getProductById")
-        .mockResolvedValue(product);
-
-      await expect(
-        productsService.deleteProductItem(productId, userId, 1)
+        productsService.deleteProductItem(
+          productId,
+          userId,
+          new Date().toISOString()
+        )
       ).rejects.toThrow();
     });
   });

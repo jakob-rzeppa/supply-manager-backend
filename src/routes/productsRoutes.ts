@@ -571,115 +571,7 @@ productsRoutes.post(
 
 /**
  * @swagger
- * /products/{id}/items/{index}:
- *   put:
- *     summary: Update an item in a product
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: The product ID
- *       - in: path
- *         name: index
- *         schema:
- *           type: string
- *         required: true
- *         description: The item index
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               expiration_date:
- *                 type: string
- *                 format: date
- *                 description: The item expiration date
- *                 example: 2022-12-31
- *     responses:
- *       200:
- *         description: Item updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Item'
- *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       403:
- *         description: Forbidden
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Product or item not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-productsRoutes.put(
-  "/:id/items/:index",
-  async (req: Request, res: Response, next: NextFunction) => {
-    {
-      const validationError = validateRequest(req, {
-        params: new Map([
-          ["id", idSchema],
-          ["index", Joi.string().regex(/^\d+$/).required()],
-        ]),
-        body: createItemBodySchema,
-      });
-      if (validationError) return next(validationError);
-    }
-    {
-      const validationError = validateLocals(
-        res,
-        Joi.object({ user: userSchema })
-      );
-      if (validationError) return next(validationError);
-    }
-
-    const [error, updatedItems] = await catchPromiseError(
-      productsService.updateProductItem(
-        req.params.id,
-        res.locals.user.id,
-        parseInt(req.params.index),
-        req.body
-      )
-    );
-    if (error) return next(error);
-
-    res.status(200).json(updatedItems);
-  }
-);
-
-/**
- * @swagger
- * /products/{id}/items/{index}:
+ * /products/{id}/items:
  *   delete:
  *     summary: Delete an item from a product
  *     tags: [Products]
@@ -692,15 +584,29 @@ productsRoutes.put(
  *           type: string
  *         required: true
  *         description: The product ID
- *       - in: path
- *         name: index
- *         schema:
- *           type: string
- *         required: true
- *         description: The item index
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               expiration_date:
+ *                 type: string
+ *                 format: date
+ *                 description: The expiration date of the item to delete
  *     responses:
- *       204:
+ *       200:
  *         description: Item deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Item'
  *       401:
  *         description: Unauthorized
  *         content:
@@ -727,14 +633,12 @@ productsRoutes.put(
  *               $ref: '#/components/schemas/Error'
  */
 productsRoutes.delete(
-  "/:id/items/:index",
+  "/:id/items",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([
-          ["id", idSchema],
-          ["index", Joi.string().regex(/^\d+$/).required()],
-        ]),
+        params: new Map([["id", idSchema]]),
+        body: Joi.object({ expiration_date: Joi.date().required() }),
       });
       if (validationError) return next(validationError);
     }
@@ -746,16 +650,16 @@ productsRoutes.delete(
       if (validationError) return next(validationError);
     }
 
-    const [error] = await catchPromiseError(
+    const [error, newItems] = await catchPromiseError(
       productsService.deleteProductItem(
         req.params.id,
         res.locals.user.id,
-        parseInt(req.params.index)
+        req.body.expiration_date
       )
     );
     if (error) return next(error);
 
-    res.sendStatus(204);
+    res.status(200).json({ items: newItems });
   }
 );
 

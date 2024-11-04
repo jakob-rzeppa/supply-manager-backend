@@ -5,6 +5,7 @@ import ItemDto from "../dtos/item.dto";
 import ProductDto from "../dtos/product.dto";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import { Product } from "../database/product/productDatabase.types";
+import NotFoundError from "../errors/db/notFoundError";
 
 export default {
   getProductsByUserId: async (userId: string) => {
@@ -123,11 +124,10 @@ export default {
     return updatedProduct.items as ItemDto[];
   },
 
-  updateProductItem: async (
+  deleteProductItem: async (
     id: string,
     userId: string,
-    index: number,
-    item: ItemDto
+    expiration_date: string
   ) => {
     const [error, product] = await catchPromiseError(
       database.products.getProductById(id, userId)
@@ -136,35 +136,25 @@ export default {
 
     const items = product.items;
 
-    items[index] = item;
-
-    items.sort(
-      (a, b) =>
-        new Date(a.expiration_date).getTime() -
-        new Date(b.expiration_date).getTime()
+    const itemIndex = items.findIndex(
+      (item) =>
+        item.expiration_date.toUTCString() ===
+        new Date(expiration_date).toUTCString()
     );
 
-    const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.updateProduct(id, userId, { items })
-    );
-    if (dbError) throw dbError;
+    if (itemIndex === -1) {
+      throw new NotFoundError("Item not found");
+    }
 
-    return updatedProduct.items as ItemDto[];
-  },
+    const newItems = items
+      .slice(0, itemIndex)
+      .concat(items.slice(itemIndex + 1));
 
-  deleteProductItem: async (id: string, userId: string, index: number) => {
-    const [error, product] = await catchPromiseError(
-      database.products.getProductById(id, userId)
-    );
-    if (error) throw error;
-
-    const items = product.items;
-
-    items.splice(index, 1);
-
-    const [dbError] = await catchPromiseError(
-      database.products.updateProduct(id, userId, { items })
+    const [dbError, newProduct] = await catchPromiseError(
+      database.products.updateProduct(id, userId, { items: newItems })
     );
     if (dbError) throw dbError;
+
+    return newProduct.items as ItemDto[];
   },
 };

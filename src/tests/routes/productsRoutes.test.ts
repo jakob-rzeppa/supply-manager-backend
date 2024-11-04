@@ -384,88 +384,7 @@ describe("Products Routes", () => {
     });
   });
 
-  describe("PUT /products/:id/items/:index", () => {
-    it("should update an item in a product", async () => {
-      const mockItems = [{ id: "1", name: "Updated Item" }];
-      (productsService.updateProductItem as jest.Mock).mockResolvedValue(
-        mockItems
-      );
-      (validateRequest as jest.Mock).mockReturnValue(null);
-      (validateLocals as jest.Mock).mockReturnValue(null);
-
-      const response = await request(app)
-        .put("/products/1/items/0")
-        .send({ name: "Updated Item" });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockItems);
-      expect(productsService.updateProductItem).toHaveBeenCalledWith(
-        "1",
-        "testUserId",
-        0,
-        { name: "Updated Item" }
-      );
-    });
-
-    it("should return validation error when a bad request is supplied", async () => {
-      (validateRequest as jest.Mock).mockReturnValue(
-        new ValidationError("Validation Error")
-      );
-
-      const response = await request(app)
-        .put("/products/1/items/0")
-        .send({ name: "Updated Item" });
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({ error: "Validation Error" });
-    });
-
-    it("should return validation error when bad res.locals are supplied", async () => {
-      (validateRequest as jest.Mock).mockReturnValue(null);
-      (validateLocals as jest.Mock).mockReturnValue(
-        new ValidationError("Validation Error")
-      );
-
-      const response = await request(app)
-        .put("/products/1/items/0")
-        .send({ name: "Updated Item" });
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({ error: "Validation Error" });
-    });
-
-    it("should return an error", async () => {
-      (productsService.updateProductItem as jest.Mock).mockRejectedValue(
-        new Error("Error")
-      );
-      (validateRequest as jest.Mock).mockReturnValue(null);
-      (validateLocals as jest.Mock).mockReturnValue(null);
-
-      const response = await request(app)
-        .put("/products/1/items/0")
-        .send({ name: "Updated Item" });
-
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: "Internal Server Error" });
-    });
-
-    it("should return an error", async () => {
-      (productsService.updateProductItem as jest.Mock).mockRejectedValue(
-        new Error("Error")
-      );
-      (validateRequest as jest.Mock).mockReturnValue(null);
-      (validateLocals as jest.Mock).mockReturnValue(null);
-
-      const response = await request(app)
-        .put("/products/1/items/0")
-        .send({ name: "Updated Item" });
-
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: "Internal Server Error" });
-    });
-  });
-
-  describe("DELETE /products/:id/items/:index", () => {
+  describe("DELETE /products/:id/items", () => {
     it("should delete an item from a product", async () => {
       (productsService.deleteProductItem as jest.Mock).mockResolvedValue(
         undefined
@@ -473,13 +392,18 @@ describe("Products Routes", () => {
       (validateRequest as jest.Mock).mockReturnValue(null);
       (validateLocals as jest.Mock).mockReturnValue(null);
 
-      const response = await request(app).delete("/products/1/items/0");
+      const date = new Date();
+      const stringDate = date.toUTCString();
+      const response = await request(app).delete("/products/1/items").send({
+        expiration_date: date.toUTCString(),
+      });
 
-      expect(response.status).toBe(204);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({});
       expect(productsService.deleteProductItem).toHaveBeenCalledWith(
         "1",
         "testUserId",
-        0
+        stringDate
       );
     });
 
@@ -488,7 +412,7 @@ describe("Products Routes", () => {
         new ValidationError("Validation Error")
       );
 
-      const response = await request(app).delete("/products/1/items/0");
+      const response = await request(app).delete("/products/1/items");
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: "Validation Error" });
@@ -500,7 +424,7 @@ describe("Products Routes", () => {
         new ValidationError("Validation Error")
       );
 
-      const response = await request(app).delete("/products/1/items/0");
+      const response = await request(app).delete("/products/1/items");
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: "Validation Error" });
@@ -513,7 +437,7 @@ describe("Products Routes", () => {
       (validateRequest as jest.Mock).mockReturnValue(null);
       (validateLocals as jest.Mock).mockReturnValue(null);
 
-      const response = await request(app).delete("/products/1/items/0");
+      const response = await request(app).delete("/products/1/items");
 
       expect(response.status).toBe(500);
       expect(response.body).toEqual({ error: "Internal Server Error" });
