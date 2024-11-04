@@ -217,7 +217,24 @@ describe("productsService", () => {
   });
 
   describe("deleteProductItem", () => {
-    it("should throw an error if the database call fails", async () => {
+    it("should delete an item from the product", async () => {
+      jest
+        .spyOn(database.products, "getProductById")
+        .mockResolvedValue(product);
+      jest
+        .spyOn(database.products, "updateProduct")
+        .mockResolvedValue({ ...product, items: [] });
+
+      const response = await productsService.deleteProductItem(
+        productId,
+        userId,
+        item.expiration_date.toISOString()
+      );
+
+      expect(response).toEqual([]);
+    });
+
+    it("should throw an error if the database call to getProductById fails", async () => {
       jest
         .spyOn(database.products, "getProductById")
         .mockRejectedValue(new Error());
@@ -231,21 +248,35 @@ describe("productsService", () => {
       ).rejects.toThrow();
     });
 
-    it("should delete the item and return an array of ItemDto", async () => {
+    it("should throw an error if the database call to updateProduct fails", async () => {
       jest
         .spyOn(database.products, "getProductById")
         .mockResolvedValue(product);
       jest
         .spyOn(database.products, "updateProduct")
-        .mockResolvedValue({ ...product, items: [] });
+        .mockRejectedValue(new Error());
 
-      const result = await productsService.deleteProductItem(
-        productId,
-        userId,
-        item.expiration_date.toUTCString()
-      );
+      await expect(
+        productsService.deleteProductItem(
+          productId,
+          userId,
+          item.expiration_date.toISOString()
+        )
+      ).rejects.toThrow();
+    });
 
-      expect(result).toEqual([]);
+    it("should throw an error if the item is not found", async () => {
+      jest
+        .spyOn(database.products, "getProductById")
+        .mockResolvedValue(product);
+
+      await expect(
+        productsService.deleteProductItem(
+          productId,
+          userId,
+          new Date().toISOString()
+        )
+      ).rejects.toThrow();
     });
   });
 });
