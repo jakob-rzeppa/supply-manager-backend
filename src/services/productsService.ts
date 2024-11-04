@@ -123,35 +123,6 @@ export default {
     return updatedProduct.items as ItemDto[];
   },
 
-  updateProductItem: async (
-    id: string,
-    userId: string,
-    index: number,
-    item: ItemDto
-  ) => {
-    const [error, product] = await catchPromiseError(
-      database.products.getProductById(id, userId)
-    );
-    if (error) throw error;
-
-    const items = product.items;
-
-    items[index] = item;
-
-    items.sort(
-      (a, b) =>
-        new Date(a.expiration_date).getTime() -
-        new Date(b.expiration_date).getTime()
-    );
-
-    const [dbError, updatedProduct] = await catchPromiseError(
-      database.products.updateProduct(id, userId, { items })
-    );
-    if (dbError) throw dbError;
-
-    return updatedProduct.items as ItemDto[];
-  },
-
   deleteProductItem: async (id: string, userId: string, index: number) => {
     const [error, product] = await catchPromiseError(
       database.products.getProductById(id, userId)

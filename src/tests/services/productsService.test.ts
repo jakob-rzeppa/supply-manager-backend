@@ -216,59 +216,6 @@ describe("productsService", () => {
     });
   });
 
-  describe("updateProductItem", () => {
-    const updatedItem: ItemDto = { expiration_date: new Date(2026) };
-
-    it("should return an array of ItemDto", async () => {
-      jest
-        .spyOn(database.products, "getProductById")
-        .mockResolvedValue(product);
-      jest.spyOn(database.products, "updateProduct").mockResolvedValue(product);
-
-      const result = await productsService.updateProductItem(
-        productId,
-        userId,
-        0,
-        updatedItem
-      );
-
-      expect(result).toEqual([updatedItem]);
-    });
-
-    it("should throw an error if the database call to getProductById fails", async () => {
-      jest
-        .spyOn(database.products, "getProductById")
-        .mockRejectedValue(new Error());
-
-      await expect(
-        productsService.updateProductItem(productId, userId, 0, updatedItem)
-      ).rejects.toThrow();
-    });
-
-    it("should throw an error if the database call to updateProduct fails", async () => {
-      jest
-        .spyOn(database.products, "getProductById")
-        .mockResolvedValue(product);
-      jest
-        .spyOn(database.products, "updateProduct")
-        .mockRejectedValue(new Error());
-
-      await expect(
-        productsService.updateProductItem(productId, userId, 0, updatedItem)
-      ).rejects.toThrow();
-    });
-
-    it("should throw an error if the item index is out of bounds", async () => {
-      jest
-        .spyOn(database.products, "getProductById")
-        .mockResolvedValue(product);
-
-      await expect(
-        productsService.updateProductItem(productId, userId, 1, updatedItem)
-      ).rejects.toThrow();
-    });
-  });
-
   describe("deleteProductItem", () => {
     it("should throw an error if the database call fails", async () => {
       jest
