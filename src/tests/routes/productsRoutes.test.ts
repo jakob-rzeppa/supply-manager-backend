@@ -393,15 +393,17 @@ describe("Products Routes", () => {
       (validateLocals as jest.Mock).mockReturnValue(null);
 
       const date = new Date();
+      const stringDate = date.toUTCString();
       const response = await request(app).delete("/products/1/items").send({
-        expiration_date: date.toISOString(),
+        expiration_date: date.toUTCString(),
       });
 
-      expect(response.status).toBe(204);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({});
       expect(productsService.deleteProductItem).toHaveBeenCalledWith(
         "1",
         "testUserId",
-        date.toISOString()
+        stringDate
       );
     });
 

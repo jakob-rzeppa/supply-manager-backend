@@ -5,6 +5,7 @@ import ItemDto from "../dtos/item.dto";
 import ProductDto from "../dtos/product.dto";
 import { catchPromiseError } from "../utilityFunctions/errorHandling";
 import { Product } from "../database/product/productDatabase.types";
+import NotFoundError from "../errors/db/notFoundError";
 
 export default {
   getProductsByUserId: async (userId: string) => {
@@ -135,11 +136,19 @@ export default {
 
     const items = product.items;
 
-    const newItems = items.filter(
+    const itemIndex = items.findIndex(
       (item) =>
-        item.expiration_date.toUTCString() !==
+        item.expiration_date.toUTCString() ===
         new Date(expiration_date).toUTCString()
     );
+
+    if (itemIndex === -1) {
+      throw new NotFoundError("Item not found");
+    }
+
+    const newItems = items
+      .slice(0, itemIndex)
+      .concat(items.slice(itemIndex + 1));
 
     const [dbError, newProduct] = await catchPromiseError(
       database.products.updateProduct(id, userId, { items: newItems })

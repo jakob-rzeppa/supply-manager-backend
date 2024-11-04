@@ -571,7 +571,7 @@ productsRoutes.post(
 
 /**
  * @swagger
- * /products/{id}/items/{index}:
+ * /products/{id}/items:
  *   delete:
  *     summary: Delete an item from a product
  *     tags: [Products]
@@ -584,15 +584,29 @@ productsRoutes.post(
  *           type: string
  *         required: true
  *         description: The product ID
- *       - in: path
- *         name: index
- *         schema:
- *           type: string
- *         required: true
- *         description: The item index
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               expiration_date:
+ *                 type: string
+ *                 format: date
+ *                 description: The expiration date of the item to delete
  *     responses:
- *       204:
+ *       200:
  *         description: Item deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Item'
  *       401:
  *         description: Unauthorized
  *         content:
@@ -636,7 +650,7 @@ productsRoutes.delete(
       if (validationError) return next(validationError);
     }
 
-    const [error] = await catchPromiseError(
+    const [error, newItems] = await catchPromiseError(
       productsService.deleteProductItem(
         req.params.id,
         res.locals.user.id,
@@ -645,7 +659,7 @@ productsRoutes.delete(
     );
     if (error) return next(error);
 
-    res.sendStatus(204);
+    res.status(200).json({ items: newItems });
   }
 );
 
