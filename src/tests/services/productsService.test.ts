@@ -223,18 +223,29 @@ describe("productsService", () => {
         .mockRejectedValue(new Error());
 
       await expect(
-        productsService.deleteProductItem(productId, userId, 0)
+        productsService.deleteProductItem(
+          productId,
+          userId,
+          item.expiration_date.toISOString()
+        )
       ).rejects.toThrow();
     });
 
-    it("should throw an error if the item index is out of bounds", async () => {
+    it("should delete the item and return an array of ItemDto", async () => {
       jest
         .spyOn(database.products, "getProductById")
         .mockResolvedValue(product);
+      jest
+        .spyOn(database.products, "updateProduct")
+        .mockResolvedValue({ ...product, items: [] });
 
-      await expect(
-        productsService.deleteProductItem(productId, userId, 1)
-      ).rejects.toThrow();
+      const result = await productsService.deleteProductItem(
+        productId,
+        userId,
+        item.expiration_date.toUTCString()
+      );
+
+      expect(result).toEqual([]);
     });
   });
 });

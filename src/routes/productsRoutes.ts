@@ -619,14 +619,12 @@ productsRoutes.post(
  *               $ref: '#/components/schemas/Error'
  */
 productsRoutes.delete(
-  "/:id/items/:index",
+  "/:id/items",
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([
-          ["id", idSchema],
-          ["index", Joi.string().regex(/^\d+$/).required()],
-        ]),
+        params: new Map([["id", idSchema]]),
+        body: Joi.object({ expiration_date: Joi.date().required() }),
       });
       if (validationError) return next(validationError);
     }
@@ -642,7 +640,7 @@ productsRoutes.delete(
       productsService.deleteProductItem(
         req.params.id,
         res.locals.user.id,
-        parseInt(req.params.index)
+        req.body.expiration_date
       )
     );
     if (error) return next(error);

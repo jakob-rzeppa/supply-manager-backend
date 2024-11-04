@@ -123,7 +123,11 @@ export default {
     return updatedProduct.items as ItemDto[];
   },
 
-  deleteProductItem: async (id: string, userId: string, index: number) => {
+  deleteProductItem: async (
+    id: string,
+    userId: string,
+    expiration_date: string
+  ) => {
     const [error, product] = await catchPromiseError(
       database.products.getProductById(id, userId)
     );
@@ -131,11 +135,17 @@ export default {
 
     const items = product.items;
 
-    items.splice(index, 1);
+    const newItems = items.filter(
+      (item) =>
+        item.expiration_date.toUTCString() !==
+        new Date(expiration_date).toUTCString()
+    );
 
-    const [dbError] = await catchPromiseError(
-      database.products.updateProduct(id, userId, { items })
+    const [dbError, newProduct] = await catchPromiseError(
+      database.products.updateProduct(id, userId, { items: newItems })
     );
     if (dbError) throw dbError;
+
+    return newProduct.items as ItemDto[];
   },
 };

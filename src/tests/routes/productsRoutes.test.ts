@@ -384,7 +384,7 @@ describe("Products Routes", () => {
     });
   });
 
-  describe("DELETE /products/:id/items/:index", () => {
+  describe("DELETE /products/:id/items", () => {
     it("should delete an item from a product", async () => {
       (productsService.deleteProductItem as jest.Mock).mockResolvedValue(
         undefined
@@ -392,13 +392,16 @@ describe("Products Routes", () => {
       (validateRequest as jest.Mock).mockReturnValue(null);
       (validateLocals as jest.Mock).mockReturnValue(null);
 
-      const response = await request(app).delete("/products/1/items/0");
+      const date = new Date();
+      const response = await request(app).delete("/products/1/items").send({
+        expiration_date: date.toISOString(),
+      });
 
       expect(response.status).toBe(204);
       expect(productsService.deleteProductItem).toHaveBeenCalledWith(
         "1",
         "testUserId",
-        0
+        date.toISOString()
       );
     });
 
@@ -407,7 +410,7 @@ describe("Products Routes", () => {
         new ValidationError("Validation Error")
       );
 
-      const response = await request(app).delete("/products/1/items/0");
+      const response = await request(app).delete("/products/1/items");
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: "Validation Error" });
@@ -419,7 +422,7 @@ describe("Products Routes", () => {
         new ValidationError("Validation Error")
       );
 
-      const response = await request(app).delete("/products/1/items/0");
+      const response = await request(app).delete("/products/1/items");
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: "Validation Error" });
@@ -432,7 +435,7 @@ describe("Products Routes", () => {
       (validateRequest as jest.Mock).mockReturnValue(null);
       (validateLocals as jest.Mock).mockReturnValue(null);
 
-      const response = await request(app).delete("/products/1/items/0");
+      const response = await request(app).delete("/products/1/items");
 
       expect(response.status).toBe(500);
       expect(response.body).toEqual({ error: "Internal Server Error" });
