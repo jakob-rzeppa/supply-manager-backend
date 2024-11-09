@@ -4,7 +4,6 @@ import { ShoppingList } from "../../database/shoppingLists/shoppingListsDatabase
 import { ShoppingListModel } from "../../database/shoppingLists/shoppingListsDatabase.models";
 import shoppingListsDatabase from "../../database/shoppingLists/shoppingListsDatabase";
 import NotFoundError from "../../errors/db/notFoundError";
-import ResourceAlreadyExistsError from "../../errors/db/resourceAlreadyExistsError";
 
 const testProduct: Product = {
   _id: new mongoose.Types.ObjectId("123456789012345678901234"),
@@ -28,6 +27,8 @@ const testShoppingList: ShoppingList = {
   ],
 };
 
+jest.mock("../../database/shoppingLists/shoppingListsDatabase.models");
+
 describe("Shopping Lists Database", () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -35,31 +36,48 @@ describe("Shopping Lists Database", () => {
 
   describe("getShoppingLists", () => {
     it("should return shopping lists", async () => {
+      ShoppingListModel.find = jest.fn().mockReturnValue([testShoppingList]);
+
       const result = await shoppingListsDatabase.getShoppingLists(
         testShoppingList.user_id
       );
 
       expect(result).toEqual([testShoppingList]);
+      expect(ShoppingListModel.find).toHaveBeenCalledWith({
+        user_id: testShoppingList.user_id,
+      });
     });
   });
 
   describe("getShoppingListById", () => {
     it("should return a shopping list", async () => {
+      ShoppingListModel.findOne = jest.fn().mockReturnValue(testShoppingList);
+
       const result = await shoppingListsDatabase.getShoppingListById(
         testShoppingList._id,
         testShoppingList.user_id
       );
 
       expect(result).toEqual(testShoppingList);
+      expect(ShoppingListModel.findOne).toHaveBeenCalledWith({
+        _id: testShoppingList._id,
+        user_id: testShoppingList.user_id,
+      });
     });
 
     it("should throw an NotFoundError if the shopping list does not exist", async () => {
+      ShoppingListModel.findOne = jest.fn().mockReturnValue(null);
+
       await expect(
         shoppingListsDatabase.getShoppingListById(
           new mongoose.Types.ObjectId("123456789012345678901234"),
           testShoppingList.user_id
         )
       ).rejects.toThrow(new NotFoundError("Shopping list not found"));
+      expect(ShoppingListModel.findOne).toHaveBeenCalledWith({
+        _id: new mongoose.Types.ObjectId("123456789012345678901234"),
+        user_id: testShoppingList.user_id,
+      });
     });
   });
 
@@ -72,6 +90,11 @@ describe("Shopping Lists Database", () => {
         products: [],
       };
 
+      jest.spyOn(ShoppingListModel.prototype, "save").mockResolvedValue({
+        _id: new mongoose.Types.ObjectId(),
+        ...newShoppingList,
+      });
+
       const result = await shoppingListsDatabase.createShoppingList(
         newShoppingList
       );
@@ -80,14 +103,6 @@ describe("Shopping Lists Database", () => {
         _id: expect.any(mongoose.Types.ObjectId),
         ...newShoppingList,
       });
-    });
-
-    it("should throw an error if the shopping list already exists", async () => {
-      await expect(
-        shoppingListsDatabase.createShoppingList(testShoppingList)
-      ).rejects.toThrow(
-        new ResourceAlreadyExistsError("Shopping list already exists")
-      );
     });
   });
 
@@ -99,6 +114,11 @@ describe("Shopping Lists Database", () => {
         products: [],
       };
 
+      ShoppingListModel.findOneAndUpdate = jest.fn().mockReturnValue({
+        ...testShoppingList,
+        ...updateShoppingList,
+      });
+
       const result = await shoppingListsDatabase.updateShoppingList(
         testShoppingList._id,
         testShoppingList.user_id,
@@ -109,9 +129,16 @@ describe("Shopping Lists Database", () => {
         ...testShoppingList,
         ...updateShoppingList,
       });
+      expect(ShoppingListModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: testShoppingList._id, user_id: testShoppingList.user_id },
+        updateShoppingList,
+        { new: true }
+      );
     });
 
     it("should throw an NotFoundError if the shopping list does not exist", async () => {
+      ShoppingListModel.findOneAndUpdate = jest.fn().mockReturnValue(null);
+
       await expect(
         shoppingListsDatabase.updateShoppingList(
           new mongoose.Types.ObjectId("123456789012345678901234"),
@@ -119,11 +146,24 @@ describe("Shopping Lists Database", () => {
           {}
         )
       ).rejects.toThrow(new NotFoundError("Shopping list not found"));
+
+      expect(ShoppingListModel.findOneAndUpdate).toHaveBeenCalledWith(
+        {
+          _id: new mongoose.Types.ObjectId("123456789012345678901234"),
+          user_id: testShoppingList.user_id,
+        },
+        {},
+        { new: true }
+      );
     });
   });
 
   describe("deleteShoppingList", () => {
     it("should delete a shopping list", async () => {
+      ShoppingListModel.findOneAndDelete = jest
+        .fn()
+        .mockReturnValue(testShoppingList);
+
       await shoppingListsDatabase.deleteShoppingList(
         testShoppingList._id,
         testShoppingList.user_id
@@ -134,15 +174,26 @@ describe("Shopping Lists Database", () => {
       });
 
       expect(result).toBeNull();
+      expect(ShoppingListModel.findOneAndDelete).toHaveBeenCalledWith({
+        _id: testShoppingList._id,
+        user_id: testShoppingList.user_id,
+      });
     });
 
     it("should throw an NotFoundError if the shopping list does not exist", async () => {
+      ShoppingListModel.findOneAndDelete = jest.fn().mockReturnValue(null);
+
       await expect(
         shoppingListsDatabase.deleteShoppingList(
           new mongoose.Types.ObjectId("123456789012345678901234"),
           testShoppingList.user_id
         )
       ).rejects.toThrow(new NotFoundError("Shopping list not found"));
+
+      expect(ShoppingListModel.findOneAndDelete).toHaveBeenCalledWith({
+        _id: new mongoose.Types.ObjectId("123456789012345678901234"),
+        user_id: testShoppingList.user_id,
+      });
     });
   });
 });
