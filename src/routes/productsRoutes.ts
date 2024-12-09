@@ -375,7 +375,7 @@ productsRoutes.put(
   async (req: Request, res: Response, next: NextFunction) => {
     {
       const validationError = validateRequest(req, {
-        params: new Map([["id", eanSchema]]),
+        params: new Map([["id", idSchema]]),
         body: updateProductBodySchema,
       });
       if (validationError) return next(validationError);
