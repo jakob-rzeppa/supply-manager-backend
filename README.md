@@ -9,7 +9,7 @@ It will function as the part of the projects that contains the logic not directl
 ## What I learned so far?
 
 - I learned that a crucial part of developing a application isn´t just programming, but designing and planning the a. o. API endpoints and desired behavior of the application.
-- I learned that testing is a necessary and very useful step in developing a feature. I beleve that - after I got the hang of the test framework - the testing saved more time than writing the tests.
+- I learned that testing is a necessary and very useful step in developing a feature. I beleve that - after I got the hang of the test framework - the testing saved more time than writing the tests did.
 
 ## What is used?
 
