@@ -1,16 +1,5 @@
 The backend for a supply management system. You can create products with a EAN (European Article Number) and change the amount of the product (with expiration dates).
 
-## Why this project?
-
-I am creating this project for my father, who is developing a supply management system to manage our supplies.
-This application will make it possible to save the data online and manage users.
-It will function as the part of the projects that contains the logic not directly seen by the user and take the load of the client.
-
-## What I learned so far?
-
-- I learned that a crucial part of developing a application isn´t just programming, but designing and planning the a. o. API endpoints and desired behavior of the application.
-- I learned that testing is a necessary and very useful step in developing a feature. I beleve that - after I got the hang of the test framework - the testing saved more time than writing the tests did.
-
 ## What is used?
 
 Routes / Middleware: Express Js
@@ -63,12 +52,12 @@ to see the swagger documentation of the API.
 
 ## Auth
 
-JsonWebTokens are used for authentication and authorisation of users.
+JsonWebTokens are used for authentication and authorization of users.
 To log in get the accessToken (expires in 30m) from this route: POST /auth/login.
 Now you can access the products by adding the token in the header:
 
 ```
-"authorisation": "bearer [accessToken]"
+"authorization": "bearer [accessToken]"
 ```
 
 Make sure to logout (DELETE /auth/logout with the body { "token": yourToken }).
